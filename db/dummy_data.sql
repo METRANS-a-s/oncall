@@ -1,4 +1,5 @@
 -- Sample MySQL data. Can be loaded after initializing schema
+USE oncall;
 
 LOCK TABLES `user` WRITE;
 /*!40000 ALTER TABLE `user` DISABLE KEYS */;

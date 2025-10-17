@@ -32,12 +32,13 @@ class StandaloneApplication(gunicorn.app.base.BaseApplication):
         app = oncall.app.get_wsgi_app()
 
         if not self.skip_build_assets:
+            gunicorn_arbiter = None
             for r in gc.get_referrers(self):
                 if isinstance(r, dict) and '_num_workers' in r:
                     gunicorn_arbiter = r
 
             # only build assets on one worker to avoid race conditions
-            if gunicorn_arbiter['worker_age'] % self.options['workers'] == 0:
+            if gunicorn_arbiter and gunicorn_arbiter['worker_age'] % self.options['workers'] == 0:
                 import oncall.ui
                 oncall.ui.build_assets()
 

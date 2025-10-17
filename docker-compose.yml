@@ -1,5 +1,3 @@
-version: '3'
-
 services:
   oncall-web:
     build: .
@@ -10,17 +8,20 @@ services:
       - DOCKER_DB_BOOTSTRAP=1
       - IRIS_API_HOST=iris
     volumes:
-      - ./configs/config.docker.yaml:/home/oncall/config/config.yaml
+      - ./configs/config.docker.yaml:/app/config.yaml
     networks:
       - iris
   
   oncall-mysql:
     hostname: oncall-mysql
-    image: mysql:5.7
+    image: mariadb:12.0.2
     environment:
       - MYSQL_ROOT_PASSWORD=1234
     networks:
       - iris
+    volumes:
+      - ./db/schema.v0.sql:/docker-entrypoint-initdb.d/00-init.sql
+      - ./db/dummy_data.sql:/docker-entrypoint-initdb.d/10-dummy-data.sql
 
 networks:
   iris:

@@ -1,0 +1,71 @@
+[project]
+version = "0.0.1"
+name='oncall'
+description='Oncall is a calendar tool designed for scheduling and managing on-call shifts'
+readme="README.md"
+license="BSD-2-Clause"
+license_files=["LICENSE"]
+classifiers=[
+    'Development Status :: 5 - Production/Stable',
+    'License :: OSI Approved :: BSD License',
+    'Natural Language :: English',
+    'Programming Language :: Python :: 3'
+]
+
+dependencies = [
+    'PyMYSQL',
+    'PyYAML',
+    'asn1crypto',
+    'beaker',
+    'cryptography',
+    'falcon',
+    'falcon-cors',
+    'gevent',
+    'greenlet',
+    'gunicorn',
+    'icalendar',
+    'idna',
+    'irisclient',
+    'jinja2',
+    'markupsafe',
+    'phonenumbers',
+    'pymsteams',
+    'python-ldap',
+    'pytz',
+    'slackclient',
+    'sqlalchemy',
+    'ujson',
+    'webassets',
+]
+
+[project.urls]
+homepage="https://oncall.tools"
+source='https://github.com/linkedin/oncall'
+
+[build-system]
+requires = ["uv_build >= 0.9.2, <0.10.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    'pytest',
+    'pytest-mock',
+    'requests',
+    'flake8==6.0.0',
+    'Sphinx==1.5.6',
+    'sphinxcontrib-httpdomain',
+    'sphinx_rtd_theme',
+    'sphinx-autobuild',
+]
+ldap = ["python-ldap"]
+prometheus = ["prometheus_client"]
+
+[project.scripts]
+oncall = "oncall.bin.run_server:main"
+oncall-user-sync = "oncall.bin.user_sync:main"
+build_assets = "oncall.bin.build_assets:main"
+oncall-scheduler = "oncall.bin.scheduler:main"
+oncall-notifier = "oncall.bin.notifier:main"
+
+[tool.uv]
+package = true
