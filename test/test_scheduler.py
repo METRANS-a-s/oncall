@@ -47,7 +47,7 @@ def test_calculate_future_events_7_24_shifts(mocker):
     for epoch, monday in zip(future_events, mondays):
         assert len(epoch) == 1
         ev = epoch[0]
-        start_dt = utc.localize(datetime.datetime.utcfromtimestamp(ev['start']))
+        start_dt = datetime.datetime.fromtimestamp(ev['start'], tz=datetime.UTC)
         start_dt = start_dt.astimezone(timezone('US/Pacific'))
         assert start_dt.timetuple().tm_year == mock_dt.timetuple().tm_year
         assert start_dt.timetuple().tm_mon == mock_dt.timetuple().tm_mon
@@ -79,7 +79,7 @@ def test_calculate_future_events_7_12_shifts(mocker):
     assert len(future_events[1]) == 7
     days = range(14, 22)
     for ev, day in zip(future_events[1], days):
-        start_dt = utc.localize(datetime.datetime.utcfromtimestamp(ev['start']))
+        start_dt = datetime.datetime.fromtimestamp(ev['start'], tz=datetime.UTC)
         start_dt = start_dt.astimezone(timezone('US/Eastern'))
         assert start_dt.timetuple().tm_year == mock_dt.timetuple().tm_year
         assert start_dt.timetuple().tm_mon == mock_dt.timetuple().tm_mon
@@ -108,7 +108,7 @@ def test_calculate_future_events_14_12_shifts(mocker):
     assert len(future_events[1]) == 14
     days = list(range(21, 31)) + list(range(1, 6))
     for ev, day in zip(future_events[1], days):
-        start_dt = utc.localize(datetime.datetime.utcfromtimestamp(ev['start']))
+        start_dt = datetime.datetime.fromtimestamp(ev['start'], tz=datetime.UTC)
         start_dt = start_dt.astimezone(timezone('US/Central'))
         assert start_dt.timetuple().tm_year == mock_dt.timetuple().tm_year
         assert start_dt.timetuple().tm_mday == day
@@ -162,7 +162,7 @@ def test_dst_schedule(mocker):
     # Make sure that events are consecutive (no gaps)
     assert dst_events[0]['end'] == dst_events[1]['start']
     for ev in dst_events:
-        start_dt = utc.localize(datetime.datetime.utcfromtimestamp(ev['start']))
+        start_dt = datetime.datetime.fromtimestamp(ev['start'], tz=datetime.UTC)
         start_dt = start_dt.astimezone(timezone('US/Central'))
         assert start_dt.timetuple().tm_hour == 11
 
@@ -189,7 +189,7 @@ def test_existing_schedule(mocker):
     for epoch, monday in zip(future_events, mondays):
         assert len(epoch) == 1
         ev = epoch[0]
-        start_dt = utc.localize(datetime.datetime.utcfromtimestamp(ev['start']))
+        start_dt = datetime.datetime.fromtimestamp(ev['start'], tz=datetime.UTC)
         start_dt = start_dt.astimezone(timezone('US/Pacific'))
         assert start_dt.timetuple().tm_year == mock_dt.timetuple().tm_year
         assert start_dt.timetuple().tm_mon == mock_dt.timetuple().tm_mon
@@ -223,7 +223,7 @@ def test_existing_schedule_change_epoch(mocker):
     for epoch, monday in zip(future_events, mondays):
         assert len(epoch) == 1
         ev = epoch[0]
-        start_dt = utc.localize(datetime.datetime.utcfromtimestamp(ev['start']))
+        start_dt = datetime.datetime.fromtimestamp(ev['start'], tz=datetime.UTC)
         start_dt = start_dt.astimezone(timezone('US/Pacific'))
         assert start_dt.timetuple().tm_year == mock_dt.timetuple().tm_year
         assert start_dt.timetuple().tm_mon == mock_dt.timetuple().tm_mon

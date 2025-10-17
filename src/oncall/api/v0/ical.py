@@ -2,9 +2,9 @@
 # See LICENSE in the project root for license information.
 
 from datetime import datetime as dt
+from datetime import UTC
 from ... import db
 from icalendar import Calendar, Event, vCalAddress, vText
-from pytz import utc
 
 
 def events_to_ical(events, identifier, contact=True):
@@ -52,9 +52,9 @@ def events_to_ical(events, identifier, contact=True):
         full_name = user.get('full_name', user['username'])
         cal_event = Event()
         cal_event.add('uid', 'event-%s@oncall' % event['id'])
-        cal_event.add('dtstart', dt.fromtimestamp(event['start'], utc))
-        cal_event.add('dtend', dt.fromtimestamp(event['end'], utc))
-        cal_event.add('dtstamp', dt.utcnow())
+        cal_event.add('dtstart', dt.fromtimestamp(event['start'], UTC))
+        cal_event.add('dtend', dt.fromtimestamp(event['end'], UTC))
+        cal_event.add('dtstamp', dt.now(UTC))
         cal_event.add('summary',
                       '%s %s shift: %s' % (event['team'], event['role'], full_name))
         cal_event.add('description',

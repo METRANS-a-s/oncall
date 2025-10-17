@@ -412,7 +412,7 @@ class Scheduler(object):
         if start_dt > handoff:
             start_epoch += timedelta(weeks=period)
             handoff += timedelta(weeks=period)
-        if handoff < utc.localize(datetime.utcnow()):
+        if handoff < datetime.now(utc):
             cursor.execute("DROP TEMPORARY TABLE IF EXISTS `temp_event`")
             connection.commit()
             raise HTTPBadRequest(

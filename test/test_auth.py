@@ -30,7 +30,7 @@ def test_application_auth(mocker):
     mocker.patch('oncall.auth.db', db)
 
     # Set up dummy API for auth testing
-    api = falcon.API(middleware=[ReqBodyMiddleware()])
+    api = falcon.App(middleware=[ReqBodyMiddleware()])
     api.add_route('/dummy_path', DummyAPI())
 
     # Test bad auth
