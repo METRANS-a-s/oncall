@@ -41,5 +41,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 FROM base
 USER oncall
 COPY --from=build --chown=oncall:oncall /app/.venv /app/.venv
+COPY ./db/schema.v0.sql /app/init.sql
 ENTRYPOINT ["/app/.venv/bin/oncall"]
 CMD ["/app/config.yaml"]

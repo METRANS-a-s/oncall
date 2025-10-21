@@ -1,7 +1,8 @@
 services:
-  oncall-web:
+  web:
     build: .
-    hostname: oncall
+    image: oncall
+    depends_on: [init]
     ports:
       - "8080:8080"
     environment:
@@ -9,20 +10,23 @@ services:
       - IRIS_API_HOST=iris
     volumes:
       - ./configs/config.docker.yaml:/app/config.yaml
-    networks:
-      - iris
   
-  oncall-mysql:
-    hostname: oncall-mysql
+  mysql:
     image: mariadb:12.0.2
+    ports:
+      - "3306:3306"
     environment:
-      - MYSQL_ROOT_PASSWORD=1234
-    networks:
-      - iris
-    volumes:
-      - ./db/schema.v0.sql:/docker-entrypoint-initdb.d/00-init.sql
-      - ./db/dummy_data.sql:/docker-entrypoint-initdb.d/10-dummy-data.sql
+      MARIADB_ROOT_PASSWORD: 1234
+      MARIADB_USER: oncall
+      MARIADB_PASSWORD: oncall
+      MARIADB_DATABASE: oncall
 
-networks:
-  iris:
-    name: iris
+  init:
+    image: oncall
+    restart: Never
+    entrypoint: [/app/.venv/bin/create-db]
+    command: [/app/config.yaml, /app/init.sql]
+    depends_on: [mysql]
+    volumes:
+      - ./configs/config.docker.yaml:/app/config.yaml
+
