@@ -11,6 +11,7 @@ classifiers=[
     'Natural Language :: English',
     'Programming Language :: Python :: 3'
 ]
+requires-python = ">=3.13"
 
 dependencies = [
     'PyMYSQL',
@@ -66,6 +67,7 @@ oncall-user-sync = "oncall.bin.user_sync:main"
 build_assets = "oncall.bin.build_assets:main"
 oncall-scheduler = "oncall.bin.scheduler:main"
 oncall-notifier = "oncall.bin.notifier:main"
+create-db = "oncall.bin.create_db:main"
 
 [tool.uv]
 package = true
