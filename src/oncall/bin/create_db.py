@@ -7,7 +7,7 @@ import pymysql.cursors
 import sys
 import re
 import oncall.utils
-
+import time
 
 def main():
     if len(sys.argv) <= 2:
@@ -18,14 +18,28 @@ def main():
 
     sql_file = sys.argv[2]
 
+    attempt = 0
+    connected = False
     # Connect to the database
-    connection = pymysql.connect(
-        host=db["host"],
-        user=db["user"],
-        password=db["password"],
-        database=db["database"],
-        cursorclass=pymysql.cursors.DictCursor,
-    )
+    while attempt < 5 and not connected:
+        try:
+            connection = pymysql.connect(
+                host=db["host"],
+                user=db["user"],
+                password=db["password"],
+                database=db["database"],
+                cursorclass=pymysql.cursors.DictCursor,
+            )
+            connected = True
+        except:
+            attempt = attempt + 1
+            print("Retry in % seconds" % (attempt *2))
+            time.sleep(2*attempt)
+
+    if not connected:
+        print("Cannot connect")
+        sys.exit(1)
+
 
     with open(sql_file) as f:
         with connection:
