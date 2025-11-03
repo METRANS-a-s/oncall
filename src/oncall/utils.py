@@ -13,6 +13,7 @@ from pytz import timezone
 from .constants import ONCALL_REMINDER
 from . import constants
 import re
+from os import environ
 
 invalid_char_reg = re.compile(r'[!"#%-,\.\/;->@\[-\^`\{-~]+')
 DAY = 86400
@@ -28,10 +29,15 @@ def update_notification(x, y):
     pass
 
 
-def read_config(config_path):
-    with open(config_path, 'r', encoding='utf8') as config_file:
-        return yaml.safe_load(config_file)
+def yaml_env_tag_constructor(loader, node):
+    arr = loader.construct_sequence(node)
+    return environ.get(arr[0], "" if len(arr) < 2 else arr[1])
 
+def read_config(config_path):
+    with open(config_path, 'r', encoding='utf8') as file:
+        l = yaml.SafeLoader
+        l.add_constructor("!env", yaml_env_tag_constructor)
+        return yaml.load(file, l)
 
 def create_notification(context, team_id, role_ids, type_name, users_involved, cursor, **kwargs):
     '''

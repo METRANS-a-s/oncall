@@ -1,18 +1,18 @@
 server:
-  host: 0.0.0.0
-  port: 8080
-debug: True
-oncall_host: http://localhost:8080
+  host: !env [ONCALL_LISTEN_ADDRESS, 0.0.0.0]
+  port: !env [ONCALL_LISTEN_PORT, 8080]
+debug: !env [ONCALL_DEBUG, False]
+oncall_host: !env [ONCALL_HOST, http://localhost:8080]
 metrics: dummy
 db:
   conn:
     kwargs:
       scheme: mysql+pymysql
-      user: root
-      password: '1234'
-      host: mysql
-      port: 3306
-      database: oncall
+      user: !env [ONCALL_DB_USER, oncall]
+      password: !env [ONCALL_DB_PASSWORD]
+      host: !env [ONCALL_DB_HOST]
+      port: !env [ONCALL_DB_PORT, 3306]
+      database: !env [ONCALL_DB_DATABASE, oncall]
       charset: utf8
       echo: True
     str: "%(scheme)s://%(user)s:%(password)s@%(host)s/%(database)s?charset=%(charset)s"
@@ -36,15 +36,7 @@ messengers:
 #   - http://www.example.com
 
 supported_timezones:
-  - 'US/Pacific'
-  - 'US/Eastern'
-  - 'US/Central'
-  - 'US/Mountain'
-  - 'US/Alaska'
-  - 'US/Hawaii'
-  - 'Asia/Kolkata'
-  - 'Asia/Shanghai'
-  - 'UTC'
+  - &default_tz !env [TZ, 'Europe/Prague']
 
 index_content_setting:
   #footer: |
@@ -70,7 +62,7 @@ notifications:
 reminder:
   activated: True
   polling_interval: 360
-  default_timezone: 'US/Pacific'
+  default_timezone: !env [TZ, *default_tz]
 
 user_validator:
   activated: True
