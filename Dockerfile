@@ -5,6 +5,11 @@ ENV BUILD_PACKAGES="build-essential libldap2-dev libsasl2-dev"
 ENV RUNTIME_PACKAGES="libldap2 libsasl2-2"
 
 RUN useradd -m -s /bin/bash oncall
+RUN --mount=type=cache,target=/var/lib/apt/lists <<LIBS
+    set -e 
+    apt-get update
+    apt-get install -y --no-install-recommends $RUNTIME_PACKAGES
+LIBS
 
 FROM base AS build
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
@@ -13,11 +18,6 @@ ENV UV_LINK_MODE=copy
 # Change the working directory to the `app` directory
 WORKDIR /app
 
-RUN --mount=type=cache,target=/var/lib/apt/lists <<LIBS
-    set -e 
-    apt-get update
-    apt-get install -y --no-install-recommends $RUNTIME_PACKAGES
-LIBS
 
 
 # Install dependencies
