@@ -104,6 +104,7 @@ def index(req, resp):
 
 
 def build_assets():
+    logger.info("Building assets...")
     CommandLineEnvironment(assets_env, logger).build()
 
 
@@ -164,3 +165,7 @@ def init(application, config):
                           StaticResource('/static/images'))
     application.add_route('/static/fonts/{filename}',
                           StaticResource('/static/fonts'))
+
+    if not config.get("debug", False):
+        assets_env.cache = False
+        assets_env.manifest = None

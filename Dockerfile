@@ -36,6 +36,8 @@ INSTALL
 COPY . .
 
 RUN --mount=type=cache,target=/root/.cache/uv \
+    uv run build_assets && \
+    rm -r src/oncall/ui/static/.webassets-cache/ && \
     uv sync --locked --no-editable --no-group dev
 
 FROM base
@@ -43,4 +45,4 @@ USER oncall
 COPY --from=build --chown=oncall:oncall /app/.venv /app/.venv
 COPY ./db/schema.v0.sql /app/init.sql
 ENTRYPOINT ["/app/.venv/bin/oncall"]
-CMD ["/app/config.yaml"]
+CMD ["/app/config.yaml", "--skip-build-assets"]

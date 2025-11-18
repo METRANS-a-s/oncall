@@ -5,6 +5,7 @@ services:
     depends_on: [init]
     ports:
       - "8080:8080"
+    read_only: true
     environment: &oncall_env
       ONCALL_DB_USER: oncall
       ONCALL_DB_PASSWORD: oncall
