@@ -240,21 +240,27 @@ var oncall = {
       },
       '/team/:name/schedules': function(params){
         oncall.callbacks.onLogin = $.noop;
-        oncall.callbacks.onLogout = $.noop;
+        oncall.callbacks.onLogout = () => {
+            self.redirectToMainPage()
+        };
         self.team.init(params.name, 'schedules');
         self.team.schedules.init(params.name);
         self.updateTitleTag(params.name + " schedules");
       },
       '/team/:name/subscriptions': function(params){
         oncall.callbacks.onLogin = $.noop;
-        oncall.callbacks.onLogout = $.noop;
+        oncall.callbacks.onLogout = () => {
+            self.redirectToMainPage()
+        };
         self.team.init(params.name, 'subscriptions');
         self.team.subscriptions.init(params.name);
         self.updateTitleTag(params.name + " subscriptions");
       },
       '/team/:name/audit': function(params){
         oncall.callbacks.onLogin = $.noop;
-        oncall.callbacks.onLogout = $.noop;
+        oncall.callbacks.onLogout = () => {
+            self.redirectToMainPage()
+        };
         self.team.init(params.name, 'audit');
         self.team.audit.init(params.name);
         self.updateTitleTag(params.name + " audit");
@@ -274,19 +280,25 @@ var oncall = {
       },
       '/user/:user/': function(){
         oncall.callbacks.onLogin = $.noop;
-        oncall.callbacks.onLogout = $.noop;
+        oncall.callbacks.onLogout = () => {
+            self.redirectToMainPage()
+        };
         self.settings.init();
         self.updateTitleTag("");
       },
       '/user/:user/notifications': function(){
         oncall.callbacks.onLogin = $.noop;
-        oncall.callbacks.onLogout = $.noop;
+        oncall.callbacks.onLogout = () => {
+            self.redirectToMainPage()
+        };
         self.settings.notifications.init();
         self.updateTitleTag("Notifications");
       },
       '/user/:user/ical_key': function(){
         oncall.callbacks.onLogin = $.noop;
-        oncall.callbacks.onLogout = $.noop;
+        oncall.callbacks.onLogout = () => {
+            self.redirectToMainPage()
+        };
         self.settings.ical_key.init();
         self.updateTitleTag("Public Calendar Keys");
       },
@@ -309,6 +321,9 @@ var oncall = {
       self.updateTitleTag("");
     });
     router.resolve();
+  },
+  redirectToMainPage: function(){
+    router.navigate('/')
   },
   recentlyViewed: {
     data: {
@@ -957,7 +972,7 @@ var oncall = {
         escalatePlanSelect: '#escalate-plan',
         cardExtra: '.card-inner[data-collapsed]',
         cardExtraChevron: '.card-inner[data-collapsed] .svg-icon-chevron',
-        oncallNowDisplayRoles: ['primary', 'secondary', 'manager'],
+        oncallNowDisplayRoles: ['primary', 'secondary', 'shadow', 'manager'],
         timezoneDisplay: '.timezone-display',
         teamName: null,
         teamData: null
@@ -1128,8 +1143,8 @@ var oncall = {
           data.showEscalate = data.showEscalate && oncall.data.irisSettings.activated;
           if (data.showEscalate) {
             data.custom_plan = self.data.teamData.iris_plan;
-            data.urgent_plan = oncall.data.irisSettings.urgent_plan.name;
-            data.medium_plan = oncall.data.irisSettings.medium_plan.name;
+            data.urgent_plan = data.irisSettings.urgent_plan ? oncall.data.irisSettings.urgent_plan.name : null;
+            data.medium_plan = data.irisSettings.medium_plan ? oncall.data.irisSettings.medium_plan.name : null;
           }
           $container.html(template(data));
           self.setupEscalateModal();
@@ -1194,11 +1209,11 @@ var oncall = {
         userPromise.done(function() {
           $title.text(userData.full_name);
           $ul
-            .append(
-              $('<li />')
+            .append(() => {
+              return $('<li />')
                 .append('<label class="label-col">E-Mail</label>')
                 .append('<span class="data-col"><a href="mailto:' + userData.contacts.email + '" target="_blank">' + userData.contacts.email + '</a></span>')
-            )
+            })
             .append(
               $('<li />')
                 .append('<label class="label-col">Call</label>')
@@ -1231,12 +1246,14 @@ var oncall = {
       updatePlanDescription: function() {
         var $modal = $(this.data.escalateModal),
             plan = $modal.find('#escalate-plan').find('option:selected').text(),
-            $description = $modal.find('#escalate-plan-description');
+            $description = $modal.find('#escalate-plan-description'),
+            urgent_plan_name = oncall.data.irisSettings.urgent_plan ? oncall.data.irisSettings.urgent_plan.name : null,
+            medium_plan_name = oncall.data.irisSettings.medium_plan ? oncall.data.irisSettings.medium_plan.name : null;
         switch (plan){
-          case oncall.data.irisSettings.urgent_plan.name:
+          case urgent_plan_name:
             $description.html('<i>For urgent escalations. <b>WARNING: This will call the current on-call</b></i>');
             break;
-          case oncall.data.irisSettings.medium_plan.name:
+          case medium_plan_name:
             $description.html('<i>For medium-priority escalations.</i>');
             break;
           case this.data.teamData.iris_plan:

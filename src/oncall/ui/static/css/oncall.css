@@ -828,7 +828,12 @@ body[data-authenticated="false"] #pinned-teams {
   -webkit-user-select: none;
   user-select: none;
   text-transform: capitalize;
-  width: 70px;
+  margin-bottom: 0px;
+}
+
+.calendar-types table td {
+    padding-bottom: 5px;
+    padding-right: 5px;
 }
 
 .calendar-types .color-swatch {
@@ -837,7 +842,7 @@ body[data-authenticated="false"] #pinned-teams {
   background: #69cded;
   display: inline-block;
   position: relative;
-  top: 2px;
+  top: 1px;
 }
 
 .calendar-types .color-swatch[data-type="primary"] {
