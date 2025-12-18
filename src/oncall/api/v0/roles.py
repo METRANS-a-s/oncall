@@ -11,6 +11,7 @@ columns = {
     'id': '`role`.`id` as `id`',
     'name': '`role`.`name` as `name`',
     'display_order': '`role`.`display_order` as `display_order`',
+    'display_name': '`role`.`display_name` as `display_name`'
 }
 
 all_columns = ', '.join(columns.values())

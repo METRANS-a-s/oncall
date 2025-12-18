@@ -1159,6 +1159,12 @@
         return 'Options required for creating modal';
       }
 
+      const user = $('body').attr('data-user');
+
+      if (!user) {
+          return
+      }
+
       var title = options.title || 'Add a new event',
           self = this,
           $calendar = self.$calendar,
@@ -1370,6 +1376,8 @@
       self.options.onModalOpen($modal, $calendar);
     },
     eventDetailsModal: function (e, evt) {
+      const user = $('body').attr('data-user');
+
       var title = evt.user || 'Event Details',
           self = this,
           $calendar = self.$calendar,
@@ -1394,20 +1402,24 @@
         .html('<span class="inc-event-details-title">' + title + '</span>')
         .append(
           $('<span class="inc-modal-top-actions" />')
-          .append(
-            $('<span class="inc-modal-swap inc-edit-action" title="Swap shift" />')
-            .html('<i class="inc-icon inc-icon-swap"><svg viewBox="0 0 24 24" width="20px" height="20px" x="0" y="0" preserveAspectRatio="xMinYMin meet"><g style="fill-opacity: 1"><g transform="translate(-1166.000000, -354.000000)"><path d="M1166.29003,358.71 L1169.59003,362 L1170.88003,360.71 L1169.17003,359 L1180.05859,358.999634 L1180.05859,357.063965 L1169.17003,357 L1170.88003,355.29 L1169.59003,354 L1166.29003,357.29 C1166.10303,357.479 1165.99803,357.734 1166.00003,358 C1165.99803,358.266 1166.10303,358.521 1166.29003,358.71 Z M1179.76857,364.29 L1176.46857,361 L1175.17857,362.29 L1176.88857,364 L1166,364.000366 L1166,365.936035 L1176.88857,366 L1175.17857,367.71 L1176.46857,369 L1179.76857,365.71 C1179.95557,365.521 1180.06057,365.266 1180.05857,365 C1180.06057,364.734 1179.95557,364.479 1179.76857,364.29 Z"></path></g></g></svg></i>')
-            .click(function(){
-              self._toggleModalSwap($(this));
-            })
-          )
-          .append(
-            $('<span class="inc-modal-edit inc-edit-action" title="Edit shift" />')
-            .html('<i class="inc-icon inc-icon-pencil"><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 12 12"><path d="M6 0l-1 1 2 2 1-1-2-2zm-2 2l-4 4v2h2l4-4-2-2z" /></svg></i>')
-            .click(function(){
-              self._toggleModalEdit($(this));
-            })
-          )
+          .append(function () {
+            if (user) {
+                return $('<span class="inc-modal-swap inc-edit-action" title="Swap shift" />')
+                    .html('<i class="inc-icon inc-icon-swap"><svg viewBox="0 0 24 24" width="20px" height="20px" x="0" y="0" preserveAspectRatio="xMinYMin meet"><g style="fill-opacity: 1"><g transform="translate(-1166.000000, -354.000000)"><path d="M1166.29003,358.71 L1169.59003,362 L1170.88003,360.71 L1169.17003,359 L1180.05859,358.999634 L1180.05859,357.063965 L1169.17003,357 L1170.88003,355.29 L1169.59003,354 L1166.29003,357.29 C1166.10303,357.479 1165.99803,357.734 1166.00003,358 C1165.99803,358.266 1166.10303,358.521 1166.29003,358.71 Z M1179.76857,364.29 L1176.46857,361 L1175.17857,362.29 L1176.88857,364 L1166,364.000366 L1166,365.936035 L1176.88857,366 L1175.17857,367.71 L1176.46857,369 L1179.76857,365.71 C1179.95557,365.521 1180.06057,365.266 1180.05857,365 C1180.06057,364.734 1179.95557,364.479 1179.76857,364.29 Z"></path></g></g></svg></i>')
+                    .click(function(){
+                    self._toggleModalSwap($(this));
+                    })
+            }
+          })
+          .append(function () {
+            if (user) {
+                return $('<span class="inc-modal-edit inc-edit-action" title="Edit shift" />')
+                    .html('<i class="inc-icon inc-icon-pencil"><svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 12 12"><path d="M6 0l-1 1 2 2 1-1-2-2zm-2 2l-4 4v2h2l4-4-2-2z" /></svg></i>')
+                    .click(function(){
+                    self._toggleModalEdit($(this));
+                    })
+            }
+          })
           .append(
             $('<span class="inc-modal-close" title="Close modal" />')
             .html('<i class="inc-icon inc-icon-close"><svg xmlns="http://www.w3.org/2000/svg" width="10px" height="10px" viewBox="0 0 8 8"><path d="M1.41 0l-1.41 1.41.72.72 1.78 1.81-1.78 1.78-.72.69 1.41 1.44.72-.72 1.81-1.81 1.78 1.81.69.72 1.44-1.44-.72-.69-1.81-1.78 1.81-1.81.72-.72-1.44-1.41-.69.72-1.78 1.78-1.81-1.78-.72-.72z" /></svg></i>')
@@ -1432,7 +1444,7 @@
         .append(
           $('<li />')
           .append('<label class="label-col">Role: </label>')
-          .append('<span class="data-col">' + evt.role + '</span>')
+          .append('<span class="data-col">' + evt.role_display_name + '</span>')
         )
         .append(
           $('<li />')

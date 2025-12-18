@@ -11,8 +11,6 @@ services:
       ONCALL_DB_PASSWORD: oncall
       ONCALL_DB_DATABASE: oncall
       ONCALL_DB_HOST: mysql
-
-
     volumes:
       - ./configs/config.docker.yaml:/app/config.yaml
 
@@ -25,10 +23,14 @@ services:
       MARIADB_USER: oncall
       MARIADB_PASSWORD: oncall
       MARIADB_DATABASE: oncall
+    command:
+      --max-user-connections=100
+    volumes:
+      - mysql_data:/var/lib/mysql
 
   init:
     image: oncall
-    restart: Never
+    restart: no
     entrypoint: [/app/.venv/bin/create-db]
     command: [/app/config.yaml, /app/init.sql]
     depends_on: [mysql]
@@ -37,3 +39,5 @@ services:
     environment:
       <<: *oncall_env
 
+volumes:
+  mysql_data:

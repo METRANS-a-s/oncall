@@ -1,10 +1,14 @@
 # Copyright (c) LinkedIn Corporation. All rights reserved. Licensed under the BSD-2 Clause license.
 # See LICENSE in the project root for license information.
 
+import logging
 from ... import db
 from ujson import dumps
 from collections import defaultdict
 from falcon import HTTPNotFound
+from .rosters import get_roster_by_team_id
+
+logger = logging.getLogger('oncall.api.v0.team_summary')
 
 
 def on_get(req, resp, team):
@@ -120,6 +124,20 @@ def on_get(req, resp, team):
     data = cursor.fetchone()
     team_id = data['id']
     override_num = data['override_phone_number']
+
+    session = req.env['beaker.session']
+    user = None
+    if 'user' in session:
+        user = session['user']
+
+    roster = get_roster_by_team_id(cursor, team_id, user)
+    allowed_users = {user['name'] for roster in roster.values() for user in roster['users']}
+
+    query = 'SELECT id FROM `user` WHERE `name` IN %s' % (allowed_users,)
+    query = query.replace('{', '(').replace('}', ')')
+    cursor.execute(query)
+    allowed_users = {row['id'] for row in cursor}
+
     current_query = '''
         SELECT `user`.`full_name` AS `full_name`,
                `user`.`photo_url`,
@@ -127,12 +145,15 @@ def on_get(req, resp, team):
                `event`.`user_id`,
                `user`.`name` AS `user`,
                `team`.`name` AS `team`,
-               `role`.`name` AS `role`
+               `role`.`name` AS `role`,
+               `role`.`display_name` AS `role_display_name`
         FROM `event`
         JOIN `user` ON `event`.`user_id` = `user`.`id`
         JOIN `team` ON `event`.`team_id` = `team`.`id`
         JOIN `role` ON `role`.`id` = `event`.`role_id`
-        WHERE UNIX_TIMESTAMP() BETWEEN `event`.`start` AND `event`.`end`'''
+        WHERE UNIX_TIMESTAMP() BETWEEN `event`.`start` AND `event`.`end`
+        AND `user`.`id` IN %s''' % (allowed_users,)
+    current_query = current_query.replace('{', '(').replace('}', ')')
     team_where = '`team`.`id` = %s'
     cursor.execute('''SELECT `subscription_id`, `role_id` FROM `team_subscription`
                       JOIN `team` ON `team_id` = `team`.`id`
@@ -155,6 +176,7 @@ def on_get(req, resp, team):
 
     next_query = '''
         SELECT `role`.`name` AS `role`,
+               `role`.`display_name` AS `role_display_name`,
                `user`.`full_name` AS `full_name`,
                `event`.`start`,
                `event`.`end`,
@@ -179,6 +201,8 @@ def on_get(req, resp, team):
     for event in cursor:
         payload['next'][event['role']].append(event)
         users.add(event['user_id'])
+
+    users = allowed_users & users
 
     if users:
         # TODO: write a test for empty users

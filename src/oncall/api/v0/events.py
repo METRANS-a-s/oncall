@@ -2,8 +2,10 @@
 # See LICENSE in the project root for license information.
 
 import time
+import logging
 from falcon import HTTP_201, HTTPError, HTTPBadRequest
 from ujson import dumps as json_dumps
+from .rosters import get_roster_by_team_id
 from ...auth import login_required, check_calendar_auth
 from ... import db, constants
 from ...utils import (
@@ -11,11 +13,14 @@ from ...utils import (
 )
 from ...constants import EVENT_CREATED
 
+logger = logging.getLogger('oncall.api.v0.events')
+
 columns = {
     'id': '`event`.`id` as `id`',
     'start': '`event`.`start` as `start`',
     'end': '`event`.`end` as `end`',
     'role': '`role`.`name` as `role`',
+    'role_display_name': '`role`.`display_name` as `role_display_name`',
     'team': '`team`.`name` as `team`',
     'user': '`user`.`name` as `user`',
     'full_name': '`user`.`full_name` as `full_name`',
@@ -157,6 +162,18 @@ def on_get(req, resp):
         raise HTTPBadRequest(
             title='Bad constraint param'
         )
+
+    # Getting Team ID
+    query = 'SELECT `id` FROM `team` WHERE `name`=%s'
+
+    connection = db.connect()
+    cursor = connection.cursor(db.DictCursor)
+
+    team_params = req.params.keys() & TEAM_PARAMS
+    cursor.execute(query, req.params['team__eq'])
+    team_id = cursor.fetchone()['id']
+
+    # Getting events
     query = '''SELECT %s FROM `event`
                JOIN `user` ON `user`.`id` = `event`.`user_id`
                JOIN `team` ON `team`.`id` = `event`.`team_id`
@@ -164,8 +181,6 @@ def on_get(req, resp):
 
     where_params = []
     where_vals = []
-    connection = db.connect()
-    cursor = connection.cursor(db.DictCursor)
 
     # Build where clause. If including subscriptions, deal with team parameters later
     params = req.params.keys() - TEAM_PARAMS if include_sub else req.params
@@ -178,7 +193,6 @@ def on_get(req, resp):
     # Deal with team subscriptions and team parameters
     team_where = []
     subs_vals = []
-    team_params = req.params.keys() & TEAM_PARAMS
     if include_sub and team_params:
 
         for key in team_params:
@@ -200,10 +214,34 @@ def on_get(req, resp):
     where_query = ' AND '.join(where_params)
     if where_query:
         query = '%s WHERE %s' % (query, where_query)
+
+    session = req.env['beaker.session']
+    user = None
+    if 'user' in session:
+        user = session['user']
+
+    roster = get_roster_by_team_id(cursor, team_id, user)
+    
     cursor.execute(query, where_vals)
     data = cursor.fetchall()
     cursor.close()
     connection.close()
+
+    # Clean the data
+    users = {user['name'] for roster in roster.values() for user in roster['users']}
+    now = int(time.time())
+
+    logger.info("Fetched users: %s", users)
+
+    for i in range(len(data)):
+        row = data[i]
+        if row['user'] in users:
+            continue
+        data[i]['user'] = row['role_display_name']
+        data[i]['full_name'] = row['role_display_name']
+        
+        logger.info(data[i])
+
     resp.text = json_dumps(data)
 
 

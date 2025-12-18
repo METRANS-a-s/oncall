@@ -1,6 +1,7 @@
 # Copyright (c) LinkedIn Corporation. All rights reserved. Licensed under the BSD-2 Clause license.
 # See LICENSE in the project root for license information.
 
+import logging
 from urllib.parse import unquote
 from falcon import HTTPError, HTTP_201, HTTPBadRequest
 from ujson import dumps as json_dumps
@@ -9,6 +10,8 @@ from ...constants import ROSTER_CREATED
 from ...auth import login_required, check_team_auth
 from ... import db
 from .schedules import get_schedules
+
+logger = logging.getLogger('oncall.api.v0.rosters')
 
 constraints = {
     'name': '`roster`.`name` = %s',
@@ -21,7 +24,7 @@ constraints = {
 }
 
 
-def get_roster_by_team_id(cursor, team_id, params=None):
+def get_roster_by_team_id(cursor, team_id, user=None, params=None):
     # get all rosters for a team
     query = 'SELECT `id`, `name` from `roster`'
     where_params = []
@@ -38,14 +41,87 @@ def get_roster_by_team_id(cursor, team_id, params=None):
     cursor.execute(query + where_clause, where_vals)
     rosters = dict((row['name'], {'users': [], 'schedules': [], 'id': row['id']})
                    for row in cursor)
+
+    # get user id from user name
+    query = 'SELECT `id` FROM `user` WHERE `name`=%s'
+    cursor.execute(query, user or 'undefined')
+
+    user_id = -1
+
+    if cursor.rowcount >= 1:
+        user_id = cursor.fetchone()['id']
+    
     # get users for each roster
     query = '''SELECT `roster`.`name` AS `roster`,
                       `user`.`name` AS `user`,
                       `roster_user`.`in_rotation` AS `in_rotation`
                FROM `roster_user`
                JOIN `roster` ON `roster_user`.`roster_id`=`roster`.`id`
-               JOIN `user` ON `roster_user`.`user_id`=`user`.`id`'''
-    cursor.execute(query + where_clause, where_vals)
+               JOIN `user` ON `roster_user`.`user_id`=`user`.`id`
+               LEFT JOIN `event` ON `event`.`user_id`=`user`.`id`
+               LEFT JOIN `role` ON `event`.`role_id`=`role`.`id`'''
+
+    where_params.append(
+        '''(
+            # IF SUPER USER
+            (
+                SELECT ux.id
+                FROM user ux
+                LEFT JOIN team_admin tax ON tax.user_id = ux.id
+                WHERE ux.id = @UserId
+                AND (
+                    ux.god = 1
+                    OR
+                    tax.team_id = @TeamId
+                )
+                LIMIT 1
+            ) IS NOT NULL
+            OR
+            # IF ANONYMOUS
+            (
+                (
+                    SELECT id
+                    FROM user
+                    WHERE id = @UserId
+                ) IS NULL
+                AND role.display_order <= 1
+                AND UNIX_TIMESTAMP() BETWEEN event.start AND event.end
+            )
+            OR
+            # IF LOGGED IN AND IN TEAM
+            (
+                (
+                    SELECT True
+                    FROM role role_y
+                    JOIN schedule sy ON sy.role_id = role_y.id
+                    JOIN roster_user ruy ON ruy.roster_id = sy.roster_id
+                    WHERE ruy.user_id = @UserId
+                    AND sy.team_id = @TeamId
+                    AND (
+                        role_y.display_order >= role.display_order
+                        OR
+                        (
+                            SELECT True
+                            FROM event ey
+                            JOIN role r ON ey.role_id = r.id
+                            WHERE UNIX_TIMESTAMP() BETWEEN ey.start AND ey.end
+                            AND ey.user_id = user.id
+                            AND role_y.display_order + 1 = r.display_order
+                            LIMIT 1
+                        )
+                    )
+                ) IS NOT NULL
+            )
+        )'''
+        .replace('@UserId', str(user_id))
+        .replace('@TeamId', str(team_id))
+    )
+    where_clause = ' WHERE %s' % ' AND '.join(where_params)
+
+    query += where_clause
+    query += ' GROUP BY `roster`.`name`, `user`.`name`'
+    
+    cursor.execute(query, where_vals)
     for row in cursor:
         rosters[row['roster']]['users'].append(
             {'name': row['user'], 'in_rotation': bool(row['in_rotation'])})
@@ -130,8 +206,13 @@ def on_get(req, resp, team):
             description='team "%s" not found' % team
         )
 
+    session = req.env['beaker.session']
+    user = None
+    if 'user' in session:
+        user = session['user']
+
     team_id = cursor.fetchone()['id']
-    rosters = get_roster_by_team_id(cursor, team_id, req.params)
+    rosters = get_roster_by_team_id(cursor, team_id, user, req.params)
 
     cursor.close()
     connection.close()

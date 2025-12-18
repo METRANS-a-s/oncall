@@ -1,5 +1,6 @@
 # Copyright (c) LinkedIn Corporation. All rights reserved. Licensed under the BSD-2 Clause license.
 # See LICENSE in the project root for license information.
+import logging
 import uuid
 import time
 from urllib.parse import unquote
@@ -13,12 +14,14 @@ from ...auth import login_required, check_team_auth
 from ...utils import load_json_body, invalid_char_reg, create_audit
 from ...constants import TEAM_DELETED, TEAM_EDITED, SUPPORTED_TIMEZONES
 
+logger = logging.getLogger('oncall.api.v0.team')
+
 # Columns which may be modified
 cols = set(['name', 'description', 'slack_channel', 'slack_channel_notifications', 'email', 'scheduling_timezone',
             'iris_plan', 'iris_enabled', 'override_phone_number', 'api_managed_roster'])
 
 
-def populate_team_users(cursor, team_dict):
+def populate_team_users(cursor, team_dict, user=None):
     cursor.execute('''SELECT `user`.`name` FROM `team_user`
                       JOIN `user` ON `team_user`.`user_id`=`user`.`id`
                       WHERE `team_id`=%s''',
@@ -27,7 +30,7 @@ def populate_team_users(cursor, team_dict):
                               for r in cursor)
 
 
-def populate_team_admins(cursor, team_dict):
+def populate_team_admins(cursor, team_dict, user=None):
     cursor.execute('''SELECT `user`.`name` FROM `team_admin`
                       JOIN `user` ON `team_admin`.`user_id`=`user`.`id`
                       WHERE `team_id`=%s''',
@@ -35,7 +38,7 @@ def populate_team_admins(cursor, team_dict):
     team_dict['admins'] = [{'name': r['name']} for r in cursor]
 
 
-def populate_team_services(cursor, team_dict):
+def populate_team_services(cursor, team_dict, user=None):
     cursor.execute('''SELECT `service`.`name` FROM `team_service`
                       JOIN `service` ON `team_service`.`service_id`=`service`.`id`
                       WHERE `team_id`=%s''',
@@ -43,8 +46,8 @@ def populate_team_services(cursor, team_dict):
     team_dict['services'] = [r['name'] for r in cursor]
 
 
-def populate_team_rosters(cursor, team_dict):
-    team_dict['rosters'] = get_roster_by_team_id(cursor, team_dict['id'])
+def populate_team_rosters(cursor, team_dict, user=None):
+    team_dict['rosters'] = get_roster_by_team_id(cursor, team_dict['id'], user)
 
 
 populate_map = {
@@ -163,7 +166,11 @@ def on_get(req, resp, team):
         populate = populate_map.get(field)
         if not populate:
             continue
-        populate(cursor, team_info)
+        session = req.env['beaker.session']
+        user = None
+        if 'user' in session:
+            user = session['user']
+        populate(cursor, team_info, user)
 
     cursor.close()
     connection.close()

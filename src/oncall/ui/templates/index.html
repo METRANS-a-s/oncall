@@ -411,7 +411,7 @@
         <div id="calendar-types-container">
           <!--// calendar types render here -->
         </div>
-        {{#each rosters}}
+        <!-- {{#each rosters}}
           <div class="card-column">
             <div class="module module-card module-top-edge" data-col-name="{{#if name}}{{name}}{{else}}{{@key}}{{/if}}">
               <div class="module-heading module-card-heading border-bottom">
@@ -432,7 +432,7 @@
               </ul>
             </div>
           </div>
-        {{/each}}
+        {{/each}} -->
       </div>
       <div class="col-md-9 col-right-edge">
         <div class="module" id="calendar-container">
@@ -539,16 +539,24 @@
     <div class="module-heading module-card-heading border-bottom">
       <h4>Show on calendar</h4>
     </div>
-    <ul>
-    {{#each this.roles}}
-      <li>
-        <input type="checkbox" id="show-{{this.name}}" data-type="{{this.name}}"
-        value="{{this.name}}" {{#inArray this.name ../currentViewRoles}} checked {{/inArray}}>
-        <label for="show-{{this.name}}">{{this.name}}</label>
-        <span class="color-swatch" data-type="{{this.name}}"></span>
-      </li>
-    {{/each}}
-    </ul>
+    <table>
+      <tbody>
+        {{#each this.roles}}
+          <tr>
+            <td>
+              <input type="checkbox" id="show-{{this.name}}" data-type="{{this.name}}"
+              value="{{this.name}}" {{#inArray this.name ../currentViewRoles}} checked {{/inArray}}>
+            </td>
+            <td>
+              <label for="show-{{this.name}}">{{this.display_name}}</label>
+            </td>
+            <td>
+              <span class="color-swatch" data-type="{{this.name}}"></span>
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
   </div>
 </script>
 
@@ -575,7 +583,7 @@
             <span class="card-inner-user">
               <strong>{{full_name}}</strong>
             </span>
-            <span class="badge pull-right" data-role="{{role}}">{{role}}</span>
+            <span class="badge pull-right" data-role="{{role}}">{{role_display_name}}</span>
             <ul class="card-inner-extra light small">
               <li> Call: {{#if user_contacts.call}} <a href="tel:{{user_contacts.call}}"> {{user_contacts.call}} </a> {{else}} <span class="error-text">No number found!</span> {{/if}} </li>
               <li> SMS: {{#if user_contacts.sms}} <a href="tel:{{user_contacts.sms}}"> {{user_contacts.sms}} </a> {{else}} <span class="error-text">No number found!</span> {{/if}} </li>
@@ -1053,7 +1061,7 @@
               <select name="from" class="form-control schedule-role">
                 {{#each roles}}
                   <option value="{{this.name}}" {{isSelected ../selected_schedule.role this.name}}>
-                    {{this.name}}
+                    {{this.display_name}}
                   </option>
                 {{/each}}
               </select>
@@ -1451,9 +1459,7 @@
     {{>settings-subheader username=name page="settings"}}
   </div>
   <div class="main container-fluid">
-{% endraw %}
-    {{user_setting_note|safe}}
-{% raw %}
+    {% endraw %} {{user_setting_note|safe}} {% raw %}
     <form class="module clearfix" id="user-settings-form">
       <table width="100%">
         <tr>
@@ -1506,6 +1512,7 @@
         </tr>
         {{/each}}
       </table>
+      <span>{{value}}</span>
       <button type="submit" id="save-settings" class="btn btn-primary btn-sm pull-right"><span class="btn-text">Save Changes</span> <i class="loader loader-small"></i></button>
     </form>
   </div>
