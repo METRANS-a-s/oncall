@@ -33,10 +33,10 @@ def init(config):
         cursor = connection.cursor(DictCursor)
         cursor.execute('ALTER TABLE `role` ADD COLUMN IF NOT EXISTS `display_name` varchar(100) NULL')
         # UPDATE ALL INSTANCES OF DEVOPS TO SHADOW
-        cursor.execute('''UPDATE `event` SET `role_id`=32 WHERE `id`=33''')
-        cursor.execute('''UPDATE `schedule` SET `role_id`=32 WHERE `id`=33''')
-        cursor.execute('''UPDATE `setting_role` SET `role_id`=32 WHERE `id`=33''')
-        cursor.execute('''UPDATE `team_subscription` SET `role_id`=32 WHERE `id`=33''')
+        cursor.execute('''UPDATE `event` SET `role_id`=32 WHERE `role_id`=33''')
+        cursor.execute('''UPDATE `schedule` SET `role_id`=32 WHERE `role_id`=33''')
+        cursor.execute('''UPDATE `setting_role` SET `role_id`=32 WHERE `role_id`=33''')
+        cursor.execute('''UPDATE `team_subscription` SET `role_id`=32 WHERE `role_id`=33''')
 
         # REMOVE DEVOPS IN ROLE
         cursor.execute('''DELETE FROM `role` WHERE `id`=33''')
