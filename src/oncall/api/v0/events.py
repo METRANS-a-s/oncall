@@ -225,10 +225,6 @@ def on_get(req, resp):
     cursor.execute(query, where_vals)
     data = cursor.fetchall()
 
-    cursor.execute('SELECT * FROM `role`')
-    temp = cursor.fetchall()
-    logger.info(temp)
-
     cursor.close()
     connection.close()
 
