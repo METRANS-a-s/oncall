@@ -35,7 +35,8 @@ def init(config):
         # UPDATE ALL INSTANCES OF DEVOPS TO SHADOW
         cursor.execute('''UPDATE `event` SET `role_id`=32 WHERE `role_id`=33''')
         cursor.execute('''UPDATE `schedule` SET `role_id`=32 WHERE `role_id`=33''')
-        cursor.execute('''UPDATE `setting_role` SET `role_id`=32 WHERE `role_id`=33''')
+        # cursor.execute('''UPDATE `setting_role` SET `role_id`=32 WHERE `role_id`=33''')
+        cursor.execute('''DELETE FROM `setting_role` WHERE `role_id`=33''')
         cursor.execute('''UPDATE `team_subscription` SET `role_id`=32 WHERE `role_id`=33''')
 
         # REMOVE DEVOPS IN ROLE
