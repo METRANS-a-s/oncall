@@ -32,16 +32,30 @@ def init(config):
         connection = connect()
         cursor = connection.cursor(DictCursor)
         cursor.execute('ALTER TABLE `role` ADD COLUMN IF NOT EXISTS `display_name` varchar(100) NULL')
-        # cursor.execute('''UPDATE `oncall`.`role` SET `display_name`='L1' WHERE `name`='L1' ''')
-        # cursor.execute('''UPDATE `oncall`.`role` SET `display_name`='L2' WHERE `name`='L2' ''')
-        # cursor.execute('''UPDATE `oncall`.`role` SET `display_name`='L3 + DevOps' WHERE `name`='L3' ''')
-        # cursor.execute('''UPDATE `oncall`.`role` SET `display_name`='L3 + DevOps' WHERE `name`='Devops' ''')
-        # cursor.execute('''UPDATE `oncall`.`role` SET `name`='primary' WHERE `name`='L1' ''')
-        # cursor.execute('''UPDATE `oncall`.`role` SET `name`='secondary' WHERE `name`='L2' ''')
-        # cursor.execute('''UPDATE `oncall`.`role` SET `name`='shadow' WHERE `name`='L3' ''')
-        # cursor.execute('''UPDATE `oncall`.`role` SET `display_name`='Manažeři' WHERE `id`=4''')
-        # cursor.execute('''UPDATE `oncall`.`role` SET `display_name`='Dovolené' WHERE `id`=5''')
-        # cursor.execute('''UPDATE `oncall`.`role` SET `display_name`='Nedostupní' WHERE `id`=6''')
+        # UPDATE ALL INSTANCES OF DEVOPS TO SHADOW
+        cursor.execute('''UPDATE `event` SET `role_id`=32 WHERE `id`=33''')
+        cursor.execute('''UPDATE `schedule` SET `role_id`=32 WHERE `id`=33''')
+        cursor.execute('''UPDATE `setting_role` SET `role_id`=32 WHERE `id`=33''')
+        cursor.execute('''UPDATE `team_subscription` SET `role_id`=32 WHERE `id`=33''')
+
+        # REMOVE DEVOPS IN ROLE
+        cursor.execute('''DELETE FROM `role` WHERE `id`=33''')
+
+        # ADD PRIMARY ROLE
+        cursor.execute('''INSERT INTO `role` (`id`, `name`, `display_name`, `display_order`) VALUES (34, 'primary', 'L1', 1)''')
+
+        # SET NORMAL NAMES
+        cursor.execute('''UPDATE `role` SET `name`='secondary' WHERE `id`=31''')
+        cursor.execute('''UPDATE `role` SET `name`='shadow' WHERE `id`=32''')
+
+        # SET NORMAL DISPLAY ORDER
+        cursor.execute('''UPDATE `role` SET `display_order`=2 WHERE `id`=31''')
+        cursor.execute('''UPDATE `role` SET `display_order`=3 WHERE `id`=32''')
+
+        # SET NORMAL DISPLAY NAME
+        cursor.execute('''UPDATE `role` SET `display_name`='L2' WHERE `id`=31''')
+        cursor.execute('''UPDATE `role` SET `display_name`='L3 + DevOps' WHERE `id`=32''')
+
         connection.commit()
         cursor.close()
         connection.close()
