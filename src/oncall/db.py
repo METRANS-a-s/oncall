@@ -27,3 +27,17 @@ def init(config):
 
     DictCursor = dbapi.cursors.DictCursor
     connect = engine.raw_connection
+
+    if config['conn'].get('migrate_on_startup'):
+        connection = connect()
+        cursor = connection.cursor(DictCursor)
+        cursor.execute('ALTER TABLE `role` ADD COLUMN IF NOT EXISTS `display_name` varchar(100) NULL')
+        cursor.execute('''UPDATE `oncall`.`role` SET `display_name`='L1' WHERE `id`=1''')
+        cursor.execute('''UPDATE `oncall`.`role` SET `display_name`='L2' WHERE `id`=2''')
+        cursor.execute('''UPDATE `oncall`.`role` SET `display_name`='L3 + DevOps' WHERE `id`=3''')
+        cursor.execute('''UPDATE `oncall`.`role` SET `display_name`='Manažeři' WHERE `id`=4''')
+        cursor.execute('''UPDATE `oncall`.`role` SET `display_name`='Dovolené' WHERE `id`=5''')
+        cursor.execute('''UPDATE `oncall`.`role` SET `display_name`='Nedostupní' WHERE `id`=6''')
+        connection.commit()
+        cursor.close()
+        connection.close()

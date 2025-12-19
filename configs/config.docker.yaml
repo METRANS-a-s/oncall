@@ -6,6 +6,7 @@ oncall_host: !env [ONCALL_HOST, http://localhost:8080]
 metrics: dummy
 db:
   conn:
+    migrate_on_startup: True
     kwargs:
       scheme: mysql+pymysql
       user: !env [ONCALL_DB_USER, oncall]
