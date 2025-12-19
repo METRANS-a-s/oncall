@@ -135,6 +135,10 @@ def on_get(req, resp, team):
 
     query = 'SELECT id FROM `user` WHERE `name` IN %s' % (allowed_users,)
     query = query.replace('{', '(').replace('}', ')')
+    logger.info('Allowed users query:')
+    logger.info(allowed_users)
+    logger.info(query)
+
     cursor.execute(query)
     allowed_users = {row['id'] for row in cursor}
 
