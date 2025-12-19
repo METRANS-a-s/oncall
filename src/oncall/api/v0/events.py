@@ -231,8 +231,6 @@ def on_get(req, resp):
     users = {user['name'] for roster in roster.values() for user in roster['users']}
     now = int(time.time())
 
-    logger.info("Fetched users: %s", users)
-
     for i in range(len(data)):
         row = data[i]
         if row['user'] in users:
