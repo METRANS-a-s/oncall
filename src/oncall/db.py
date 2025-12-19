@@ -31,9 +31,7 @@ def init(config):
     if config['conn'].get('migrate_on_startup'):
         connection = connect()
         cursor = connection.cursor(DictCursor)
-        cursor.execute('SELECT * FROM `role`')
-        print(cursor.fetchall())
-        # cursor.execute('ALTER TABLE `role` ADD COLUMN IF NOT EXISTS `display_name` varchar(100) NULL')
+        cursor.execute('ALTER TABLE `role` ADD COLUMN IF NOT EXISTS `display_name` varchar(100) NULL')
         # cursor.execute('''UPDATE `oncall`.`role` SET `display_name`='L1' WHERE `name`='L1' ''')
         # cursor.execute('''UPDATE `oncall`.`role` SET `display_name`='L2' WHERE `name`='L2' ''')
         # cursor.execute('''UPDATE `oncall`.`role` SET `display_name`='L3 + DevOps' WHERE `name`='L3' ''')

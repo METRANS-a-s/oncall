@@ -224,6 +224,11 @@ def on_get(req, resp):
     
     cursor.execute(query, where_vals)
     data = cursor.fetchall()
+
+    custor.execute('SELECT * FROM `role`')
+    temp = cursor.fetchall()
+    logger.info(temp)
+
     cursor.close()
     connection.close()
 
@@ -237,8 +242,6 @@ def on_get(req, resp):
             continue
         data[i]['user'] = row['role_display_name']
         data[i]['full_name'] = row['role_display_name']
-        
-        logger.info(data[i])
 
     resp.text = json_dumps(data)
 
