@@ -43,7 +43,7 @@ def init(config):
         cursor.execute('''DELETE FROM `role` WHERE `id`=33''')
 
         # ADD PRIMARY ROLE
-        cursor.execute('''INSERT INTO `role` (`id`, `name`, `display_name`, `display_order`) VALUES (34, 'primary', 'L1', 1)''')
+        cursor.execute('''INSERT INTO `role` (`name`, `display_name`, `display_order`) VALUES ('primary', 'L1', 1)''')
 
         # SET NORMAL NAMES
         cursor.execute('''UPDATE `role` SET `name`='secondary' WHERE `id`=31''')
