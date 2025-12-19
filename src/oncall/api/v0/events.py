@@ -225,7 +225,7 @@ def on_get(req, resp):
     cursor.execute(query, where_vals)
     data = cursor.fetchall()
 
-    custor.execute('SELECT * FROM `role`')
+    cursor.execute('SELECT * FROM `role`')
     temp = cursor.fetchall()
     logger.info(temp)
 
