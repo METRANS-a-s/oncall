@@ -215,6 +215,12 @@
   border-color: #B2B0FA;
 }
 
+.inc-calendar .inc-event[data-type="tertiary"] {
+  background: #FAF0FA;
+  color: #47254E;
+  border-color: #D7B2D9;
+}
+
 .inc-calendar .inc-event[data-type="shadow"] {
   background: #E1E9EE;
   color: #283E4A;

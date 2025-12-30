@@ -12,6 +12,7 @@ from ...utils import (
     load_json_body, user_in_team_by_name, create_notification, create_audit
 )
 from ...constants import EVENT_CREATED
+from .users import get_user_details
 
 logger = logging.getLogger('oncall.api.v0.events')
 
@@ -21,6 +22,8 @@ columns = {
     'end': '`event`.`end` as `end`',
     'role': '`role`.`name` as `role`',
     'role_display_name': '`role`.`display_name` as `role_display_name`',
+    'role_display_order': '`role`.`display_order` as `role_display_order`',
+    'roster_id': '`schedule`.`roster_id` as `roster_id`',
     'team': '`team`.`name` as `team`',
     'user': '`user`.`name` as `user`',
     'full_name': '`user`.`full_name` as `full_name`',
@@ -149,97 +152,166 @@ def on_get(req, resp):
     :statuscode 200: no error
     :statuscode 400: bad request
     """
-    fields = req.get_param_as_list('fields')
-    if fields:
-        fields = [columns[f] for f in fields if f in columns]
-    req.params.pop('fields', None)
-    include_sub = req.get_param_as_bool('include_subscribed')
-    if include_sub is None:
-        include_sub = True
-    req.params.pop('include_subscribed', None)
-    cols = ', '.join(fields) if fields else all_columns
-    if any(key not in constraints for key in req.params):
-        raise HTTPBadRequest(
-            title='Bad constraint param'
-        )
-
-    # Getting Team ID
-    query = 'SELECT `id` FROM `team` WHERE `name`=%s'
-
     connection = db.connect()
     cursor = connection.cursor(db.DictCursor)
 
-    team_params = req.params.keys() & TEAM_PARAMS
-    cursor.execute(query, req.params['team__eq'])
+    # Get team ID
+    query = 'SELECT `id` FROM `team` WHERE `name`=%s'
+    cursor.execute(query, req.get_param('team__eq'))
     team_id = cursor.fetchone()['id']
+    start = req.get_param('start__lt')
+    end = req.get_param('end__ge')
 
-    # Getting events
-    query = '''SELECT %s FROM `event`
-               JOIN `user` ON `user`.`id` = `event`.`user_id`
-               JOIN `team` ON `team`.`id` = `event`.`team_id`
-               JOIN `role` ON `role`.`id` = `event`.`role_id`''' % cols
-
-    where_params = []
-    where_vals = []
-
-    # Build where clause. If including subscriptions, deal with team parameters later
-    params = req.params.keys() - TEAM_PARAMS if include_sub else req.params
-    for key in params:
-        val = req.get_param(key)
-        if key in constraints:
-            where_params.append(constraints[key])
-            where_vals.append(val)
-
-    # Deal with team subscriptions and team parameters
-    team_where = []
-    subs_vals = []
-    if include_sub and team_params:
-
-        for key in team_params:
-            val = req.get_param(key)
-            team_where.append(constraints[key])
-            subs_vals.append(val)
-        subs_and = ' AND '.join(team_where)
-        cursor.execute('''SELECT `subscription_id`, `role_id` FROM `team_subscription`
-                          JOIN `team` ON `team_id` = `team`.`id`
-                          WHERE %s''' % subs_and,
-                       subs_vals)
-        if cursor.rowcount != 0:
-            # Build where clause based on team params and subscriptions
-            subs_and = '(%s OR (%s))' % (subs_and, ' OR '.join(['`team`.`id` = %s AND `role`.`id` = %s' %
-                                                                (row['subscription_id'], row['role_id']) for row in cursor]))
-        where_params.append(subs_and)
-        where_vals += subs_vals
-
-    where_query = ' AND '.join(where_params)
-    if where_query:
-        query = '%s WHERE %s' % (query, where_query)
-
+    cols = all_columns
     session = req.env['beaker.session']
     user = None
+
     if 'user' in session:
         user = session['user']
 
-    roster = get_roster_by_team_id(cursor, team_id, user)
-    
-    cursor.execute(query, where_vals)
+    user = get_user_details(user, team_id, cursor)
+
+    query = '''SELECT %s FROM `event`
+               JOIN `user` ON `user`.`id` = `event`.`user_id`
+               JOIN `team` ON `team`.`id` = `event`.`team_id`
+               JOIN `role` ON `role`.`id` = `event`.`role_id`
+               LEFT JOIN `schedule` ON `schedule`.`id` = `event`.`schedule_id`
+               WHERE `team`.`id` = %s
+               AND `event`.`start` < %s
+               AND `event`.`end` > %s'''
+
+    cursor.execute(query, (cols, team_id, start, end))
     data = cursor.fetchall()
 
     cursor.close()
     connection.close()
 
-    # Clean the data
-    users = {user['name'] for roster in roster.values() for user in roster['users']}
-    now = int(time.time())
+    current_time = int(time())  # Get the current time as a Unix timestamp
 
-    for i in range(len(data)):
-        row = data[i]
-        if row['user'] in users:
-            continue
-        data[i]['user'] = row['role_display_name']
-        data[i]['full_name'] = row['role_display_name']
+    highest_display_order = max(item['role_display_order'] for item in data) if data else 0
+    if user['sees_all'] or user['display_order'] >= highest_display_order:
+        grouped_data = {}
+        for item in data:
+            roster_id = item['roster_id']
+            if roster_id not in grouped_data:
+                grouped_data[roster_id] = []
+            grouped_data[roster_id].append(item)
+    else:
+        grouped_data = {}
+        for item in data:
+            event_display_order = item['role_display_order']
+            event_start = item['start']
+            event_end = item['end']
 
-    resp.text = json_dumps(data)
+            if event_display_order <= user['display_order']:
+                pass
+            elif event_display_order == user['display_order'] + 1 and event_start <= current_time <= event_end:
+                pass
+            else:
+                continue
+
+            # Group the event by roster_id
+            roster_id = item['roster_id']
+            if roster_id not in grouped_data:
+                grouped_data[roster_id] = []
+            grouped_data[roster_id].append(item)
+
+    logger.info('Fetched events: %s', grouped_data)
+
+    resp.text = json_dumps(grouped_data)
+
+
+    # fields = req.get_param_as_list('fields')
+    # if fields:
+    #     fields = [columns[f] for f in fields if f in columns]
+    # req.params.pop('fields', None)
+    # include_sub = req.get_param_as_bool('include_subscribed')
+    # if include_sub is None:
+    #     include_sub = True
+    # req.params.pop('include_subscribed', None)
+    # cols = ', '.join(fields) if fields else all_columns
+    # if any(key not in constraints for key in req.params):
+    #     raise HTTPBadRequest(
+    #         title='Bad constraint param'
+    #     )
+
+    # # Getting Team ID
+    # query = 'SELECT `id` FROM `team` WHERE `name`=%s'
+
+    # connection = db.connect()
+    # cursor = connection.cursor(db.DictCursor)
+
+    # team_params = req.params.keys() & TEAM_PARAMS
+    # cursor.execute(query, req.params['team__eq'])
+    # team_id = cursor.fetchone()['id']
+
+    # # Getting events
+    # query = '''SELECT %s FROM `event`
+    #            JOIN `user` ON `user`.`id` = `event`.`user_id`
+    #            JOIN `team` ON `team`.`id` = `event`.`team_id`
+    #            JOIN `role` ON `role`.`id` = `event`.`role_id`''' % cols
+
+    # where_params = []
+    # where_vals = []
+
+    # # Build where clause. If including subscriptions, deal with team parameters later
+    # params = req.params.keys() - TEAM_PARAMS if include_sub else req.params
+    # for key in params:
+    #     val = req.get_param(key)
+    #     if key in constraints:
+    #         where_params.append(constraints[key])
+    #         where_vals.append(val)
+
+    # # Deal with team subscriptions and team parameters
+    # team_where = []
+    # subs_vals = []
+    # if include_sub and team_params:
+
+    #     for key in team_params:
+    #         val = req.get_param(key)
+    #         team_where.append(constraints[key])
+    #         subs_vals.append(val)
+    #     subs_and = ' AND '.join(team_where)
+    #     cursor.execute('''SELECT `subscription_id`, `role_id` FROM `team_subscription`
+    #                       JOIN `team` ON `team_id` = `team`.`id`
+    #                       WHERE %s''' % subs_and,
+    #                    subs_vals)
+    #     if cursor.rowcount != 0:
+    #         # Build where clause based on team params and subscriptions
+    #         subs_and = '(%s OR (%s))' % (subs_and, ' OR '.join(['`team`.`id` = %s AND `role`.`id` = %s' %
+    #                                                             (row['subscription_id'], row['role_id']) for row in cursor]))
+    #     where_params.append(subs_and)
+    #     where_vals += subs_vals
+
+    # where_query = ' AND '.join(where_params)
+    # if where_query:
+    #     query = '%s WHERE %s' % (query, where_query)
+
+    # session = req.env['beaker.session']
+    # user = None
+    # if 'user' in session:
+    #     user = session['user']
+
+    # roster = get_roster_by_team_id(cursor, team_id, user)
+    
+    # cursor.execute(query, where_vals)
+    # data = cursor.fetchall()
+
+    # cursor.close()
+    # connection.close()
+
+    # # Clean the data
+    # users = {user['name'] for roster in roster.values() for user in roster['users']}
+    # now = int(time.time())
+
+    # for i in range(len(data)):
+    #     row = data[i]
+    #     if row['user'] in users:
+    #         continue
+    #     data[i]['user'] = row['role_display_name']
+    #     data[i]['full_name'] = row['role_display_name']
+
+    # resp.text = json_dumps(data)
 
 
 @login_required

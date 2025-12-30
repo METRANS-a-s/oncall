@@ -61,61 +61,61 @@ def get_roster_by_team_id(cursor, team_id, user=None, params=None):
                LEFT JOIN `event` ON `event`.`user_id`=`user`.`id`
                LEFT JOIN `role` ON `event`.`role_id`=`role`.`id`'''
 
-    where_params.append(
-        '''(
-            # IF SUPER USER
-            (
-                SELECT ux.id
-                FROM user ux
-                LEFT JOIN team_admin tax ON tax.user_id = ux.id
-                WHERE ux.id = @UserId
-                AND (
-                    ux.god = 1
-                    OR
-                    tax.team_id = @TeamId
-                )
-                LIMIT 1
-            ) IS NOT NULL
-            OR
-            # IF ANONYMOUS
-            (
-                (
-                    SELECT id
-                    FROM user
-                    WHERE id = @UserId
-                ) IS NULL
-                AND role.display_order <= 1
-                AND UNIX_TIMESTAMP() BETWEEN event.start AND event.end
-            )
-            OR
-            # IF LOGGED IN AND IN TEAM
-            (
-                (
-                    SELECT True
-                    FROM role role_y
-                    JOIN schedule sy ON sy.role_id = role_y.id
-                    JOIN roster_user ruy ON ruy.roster_id = sy.roster_id
-                    WHERE ruy.user_id = @UserId
-                    AND sy.team_id = @TeamId
-                    AND (
-                        role_y.display_order >= role.display_order
-                        OR
-                        (
-                            SELECT True
-                            FROM event ey
-                            JOIN role r ON ey.role_id = r.id
-                            WHERE UNIX_TIMESTAMP() BETWEEN ey.start AND ey.end
-                            AND ey.user_id = user.id
-                            AND role_y.display_order + 1 = r.display_order
-                            LIMIT 1
-                        )
-                    )
-                ) IS NOT NULL
-            )
-        )'''
-        .replace('@UserId', str(user_id))
-        .replace('@TeamId', str(team_id))
-    )
+    # where_params.append(
+    #     '''(
+    #         # IF SUPER USER
+    #         (
+    #             SELECT ux.id
+    #             FROM user ux
+    #             LEFT JOIN team_admin tax ON tax.user_id = ux.id
+    #             WHERE ux.id = @UserId
+    #             AND (
+    #                 ux.god = 1
+    #                 OR
+    #                 tax.team_id = @TeamId
+    #             )
+    #             LIMIT 1
+    #         ) IS NOT NULL
+    #         OR
+    #         # IF ANONYMOUS
+    #         (
+    #             (
+    #                 SELECT id
+    #                 FROM user
+    #                 WHERE id = @UserId
+    #             ) IS NULL
+    #             AND role.display_order <= 1
+    #             AND UNIX_TIMESTAMP() BETWEEN event.start AND event.end
+    #         )
+    #         OR
+    #         # IF LOGGED IN AND IN TEAM
+    #         (
+    #             (
+    #                 SELECT True
+    #                 FROM role role_y
+    #                 JOIN schedule sy ON sy.role_id = role_y.id
+    #                 JOIN roster_user ruy ON ruy.roster_id = sy.roster_id
+    #                 WHERE ruy.user_id = @UserId
+    #                 AND sy.team_id = @TeamId
+    #                 AND (
+    #                     role_y.display_order >= role.display_order
+    #                     OR
+    #                     (
+    #                         SELECT True
+    #                         FROM event ey
+    #                         JOIN role r ON ey.role_id = r.id
+    #                         WHERE UNIX_TIMESTAMP() BETWEEN ey.start AND ey.end
+    #                         AND ey.user_id = user.id
+    #                         AND role_y.display_order + 1 = r.display_order
+    #                         LIMIT 1
+    #                     )
+    #                 )
+    #             ) IS NOT NULL
+    #         )
+    #     )'''
+    #     .replace('@UserId', str(user_id))
+    #     .replace('@TeamId', str(team_id))
+    # )
     where_clause = ' WHERE %s' % ' AND '.join(where_params)
 
     query += where_clause

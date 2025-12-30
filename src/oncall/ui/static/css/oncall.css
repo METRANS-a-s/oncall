@@ -853,6 +853,10 @@ body[data-authenticated="false"] #pinned-teams {
   background: #B2B0FA;
 }
 
+.calendar-types .color-swatch[data-type="tertiary"] {
+  background: #D7B2D9;
+}
+
 .calendar-types .color-swatch[data-type="shadow"] {
   background: #ACB9C2;
 }
@@ -1833,6 +1837,11 @@ footer li:first-child {
 .badge[data-role="secondary"] {
   background: #E6E6FF;
   color: #2C2B9D;
+}
+
+.badge[data-role="tertiary"] {
+  background: #FAF0FA;
+  color: #47254E;
 }
 
 .badge[data-role="shadow"] {

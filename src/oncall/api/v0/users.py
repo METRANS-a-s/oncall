@@ -113,6 +113,52 @@ def get_user_data(fields, filter_params, dbinfo=None):
     return data
 
 
+def get_user_details(user, team_id, cursor):
+    query = '''SELECT `user`.`id` AS id, `role`.`display_order` AS display_order,
+                      ((`team_admin`.`user_id` IS NOT NULL AND `team_admin`.`team_id` = %s) OR `user`.`god` = 1) AS sees_all
+               FROM `roster_user`
+               JOIN `roster` ON `roster`.`id` = `roster_user`.`roster_id`
+               JOIN `user` ON `user`.`id` = `roster_user`.`user_id`
+               LEFT JOIN `schedule` ON `schedule`.`roster_id` = `roster`.`id`
+               LEFT JOIN `role` ON `role`.`id` = `schedule`.`role_id`
+               LEFT JOIN `team_admin` ON `team_admin`.`user_id` = `user`.`id`
+               WHERE `roster`.`team_id` = %s
+               AND `user`.`name` = %s'''
+    
+    cursor.execute(query, (team_id, team_id, user))
+    row = cursor.fetchone()
+
+    if row:
+        return row
+    
+    return {
+        'id': -1,
+        'display_order': 0,
+        'sees_all': False
+    }
+
+
+# def get_visible_users(user, team_id, cursor):
+#     user = get_user_details(user, team_id, cursor)
+#     query = '''SELECT `user`.`id` AS id, `user`.`name` AS name,
+#                       `role`.`display_order` AS display_order
+#                       FROM `schedule`
+#                       JOIN `role` ON `role`.`id` = `schedule`.`role_id`
+#                       JOIN `roster_user` ON `roster_user`.`roster_id` = `schedule`.`roster_id`
+#                       JOIN `user` ON `user`.`id` = `roster_user`.`user_id`
+#                       WHERE `schedule`.`team_id` = %s
+#                       AND `role`.`display_order` <= %s'''
+
+#     cursor.execute(query, (team_id, user['display_order'] + 2))
+
+#     rows = cursor.fetchall()
+#     visible_users = []
+#     possibly_visible_users = []
+    
+#     for row in rows:
+        
+
+
 def on_get(req, resp):
     """
     Get users filtered by params. Returns a list of user info objects for all users matching

@@ -563,6 +563,7 @@
       }
     },
     updateDisplayedEvents: function (eventTypes) {
+      console.log('updateDisplayedEvents', eventTypes);
       this.updateCalendarOption('currentViewRoles', eventTypes);
       this.$calendar.find('.inc-event').each(function(){
         var $this = $(this);
@@ -890,6 +891,8 @@
         function createEventElement (left, top, width) {
           var evtHtmlString = evt.displayString || '<span class="inc-event-name">' + ( evt.full_name || evt.user ) + '</span> <span class="inc-event-date"> ' + evt.origStartDateObj.format('M/D/YYYY HH:mm') + ' to ' + evt.origEndDateObj.format('M/D/YYYY HH:mm') + '</span>',
               evtDisplayString = evt.displayString || ( evt.full_name || evt.user ) + ' ' + evt.origStartDateObj.format('M/D/YYYY HH:mm') + ' to ' + evt.origEndDateObj.format('M/D/YYYY HH:mm');
+
+          console.log('creating event', evt)
 
           return $('<div class="inc-event" />')
             .html(evtHtmlString)
