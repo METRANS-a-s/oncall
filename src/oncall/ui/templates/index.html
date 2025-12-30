@@ -94,7 +94,7 @@
           {{#each this}}
           <li class="card-inner border-bottom" data-card-name="{{full_name}}">
             <img class="card-picture" src="{{defaultPhoto photo_url}}" alt="{{full_name}}">
-            <h4><strong>{{full_name}}</strong> <span class="badge pull-right" data-role="{{role}}">{{role}}</span></h4>
+            <h4><strong>{{full_name}}</strong> <span class="badge pull-right" data-role="{{role}}">{{role_display_name}}</span></h4>
             <div class="light"><a href="mailto:{{user_contacts.email}}">{{user_contacts.email}}</a></div>
             <span class="light"><a href="tel:{{user_contacts.call}}">{{user_contacts.call}}</a></span>
             <ul class="border-top card-content">

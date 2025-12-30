@@ -224,6 +224,7 @@ def on_get(req, resp):
     
     cursor.execute(query, where_vals)
     data = cursor.fetchall()
+
     cursor.close()
     connection.close()
 
@@ -231,16 +232,12 @@ def on_get(req, resp):
     users = {user['name'] for roster in roster.values() for user in roster['users']}
     now = int(time.time())
 
-    logger.info("Fetched users: %s", users)
-
     for i in range(len(data)):
         row = data[i]
         if row['user'] in users:
             continue
         data[i]['user'] = row['role_display_name']
         data[i]['full_name'] = row['role_display_name']
-        
-        logger.info(data[i])
 
     resp.text = json_dumps(data)
 
