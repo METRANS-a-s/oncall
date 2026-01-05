@@ -167,59 +167,72 @@ def on_get(req, resp):
     user = None
 
     if 'user' in session:
+        logger.info('User found in session, name: %s', session['user'])
         user = session['user']
 
     user = get_user_details(user, team_id, cursor)
 
-    query = '''SELECT %s FROM `event`
+    query = '''SELECT %s
+               FROM `event`
                JOIN `user` ON `user`.`id` = `event`.`user_id`
                JOIN `team` ON `team`.`id` = `event`.`team_id`
                JOIN `role` ON `role`.`id` = `event`.`role_id`
                LEFT JOIN `schedule` ON `schedule`.`id` = `event`.`schedule_id`
                WHERE `team`.`id` = %s
                AND `event`.`start` < %s
-               AND `event`.`end` > %s'''
+               AND `event`.`end` >= %s'''
 
-    cursor.execute(query, (cols, team_id, start, end))
+    logger.info('Executing event query: %s', query % (cols, team_id, start, end))
+
+    cursor.execute(query % (cols, team_id, start, end))
     data = cursor.fetchall()
+
+    logger.info('Fetched %d events', len(data))
+    logger.info('User: %s', user)
 
     cursor.close()
     connection.close()
 
-    current_time = int(time())  # Get the current time as a Unix timestamp
-
+    current_time = int(time.time())
     highest_display_order = max(item['role_display_order'] for item in data) if data else 0
+    
     if user['sees_all'] or user['display_order'] >= highest_display_order:
-        grouped_data = {}
-        for item in data:
-            roster_id = item['roster_id']
-            if roster_id not in grouped_data:
-                grouped_data[roster_id] = []
-            grouped_data[roster_id].append(item)
+        resp.text = json_dumps(data)
     else:
-        grouped_data = {}
-        for item in data:
-            event_display_order = item['role_display_order']
-            event_start = item['start']
-            event_end = item['end']
+        
+        # grouped_data = {}
 
-            if event_display_order <= user['display_order']:
-                pass
-            elif event_display_order == user['display_order'] + 1 and event_start <= current_time <= event_end:
-                pass
-            else:
-                continue
+        # for item in data:
+        #     event_display_order = item['role_display_order']
+        #     event_start = item['start']
+        #     event_end = item['end']
+        #     roster_id = item['roster_id']
 
-            # Group the event by roster_id
-            roster_id = item['roster_id']
-            if roster_id not in grouped_data:
-                grouped_data[roster_id] = []
-            grouped_data[roster_id].append(item)
+        #     if roster_id not in grouped_data:
+        #         grouped_data[roster_id] = []
 
-    logger.info('Fetched events: %s', grouped_data)
+        #     # Show all events whose display order is less than or equal to the user's display order
+        #     if event_display_order <= user['display_order']:
+        #         grouped_data[roster_id].append(item)
 
-    resp.text = json_dumps(grouped_data)
+        #     # Show all active events whose display order is one greater than the user's display order
+        #     elif event_display_order == user['display_order'] + 1 and event_start <= current_time <= event_end:
+        #         grouped_data[roster_id].append(item)
 
+        #     # Show the active events whose display order is two greater IF in any of the rosters with the one greater display order aren't active
+        #     elif event_display_order == user['display_order'] + 2:
+        #         one_greater_active = any(
+        #             e['role_display_order'] == user['display_order'] + 1 and e['start'] <= current_time <= e['end']
+        #             for e in grouped_data.get(roster_id, [])
+        #         )
+
+        #         if not one_greater_active:
+        #             grouped_data[roster_id].append(item)
+
+        # flattened_data = [event for events in grouped_data.values() for event in events]
+        # resp.text = json_dumps(flattened_data)
+
+    # ------------------------------------------------------------------------------------
 
     # fields = req.get_param_as_list('fields')
     # if fields:
@@ -249,7 +262,8 @@ def on_get(req, resp):
     # query = '''SELECT %s FROM `event`
     #            JOIN `user` ON `user`.`id` = `event`.`user_id`
     #            JOIN `team` ON `team`.`id` = `event`.`team_id`
-    #            JOIN `role` ON `role`.`id` = `event`.`role_id`''' % cols
+    #            JOIN `role` ON `role`.`id` = `event`.`role_id`
+    #            LEFT JOIN `schedule` ON `schedule`.`id` = `event`.`schedule_id`''' % cols
 
     # where_params = []
     # where_vals = []
@@ -294,6 +308,7 @@ def on_get(req, resp):
 
     # roster = get_roster_by_team_id(cursor, team_id, user)
     
+    # logger.info('Executing event query: %s', query)
     # cursor.execute(query, where_vals)
     # data = cursor.fetchall()
 

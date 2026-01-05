@@ -115,17 +115,20 @@ def get_user_data(fields, filter_params, dbinfo=None):
 
 def get_user_details(user, team_id, cursor):
     query = '''SELECT `user`.`id` AS id, `role`.`display_order` AS display_order,
-                      ((`team_admin`.`user_id` IS NOT NULL AND `team_admin`.`team_id` = %s) OR `user`.`god` = 1) AS sees_all
-               FROM `roster_user`
-               JOIN `roster` ON `roster`.`id` = `roster_user`.`roster_id`
-               JOIN `user` ON `user`.`id` = `roster_user`.`user_id`
-               LEFT JOIN `schedule` ON `schedule`.`roster_id` = `roster`.`id`
-               LEFT JOIN `role` ON `role`.`id` = `schedule`.`role_id`
-               LEFT JOIN `team_admin` ON `team_admin`.`user_id` = `user`.`id`
-               WHERE `roster`.`team_id` = %s
-               AND `user`.`name` = %s'''
+                    ((`team_admin`.`user_id` IS NOT NULL AND `team_admin`.`team_id` = %s) OR `user`.`god` = 1) AS sees_all
+               FROM `user`
+               LEFT JOIN `roster_user` ON `roster_user`.user_id = `user`.`id`
+               LEFT JOIN `schedule` ON `schedule`.roster_id = `roster_user`.`roster_id`
+               LEFT JOIN `role` ON `role`.id = `schedule`.`role_id`
+               LEFT JOIN `team_admin` ON `team_admin`.user_id = `user`.`id`
+               WHERE `user`.`name` = %s
+               AND (
+                   `schedule`.`team_id` = %s
+                   OR
+                   `team_admin`.`team_id` = %s
+               )'''
     
-    cursor.execute(query, (team_id, team_id, user))
+    cursor.execute(query, (team_id, user, team_id, team_id))
     row = cursor.fetchone()
 
     if row:

@@ -46,9 +46,8 @@ def on_get(req, resp, user_name):
                 "user": "jdoe"
             }
         ]
-
-
     '''
+
     role = req.get_param('role', None)
     limit = req.get_param_as_int('limit')
     query_end = ' ORDER BY `event`.`start` ASC'
@@ -57,6 +56,7 @@ def on_get(req, resp, user_name):
                JOIN `user` ON `user`.`id` = `event`.`user_id`
                JOIN `team` ON `team`.`id` = `event`.`team_id`
                JOIN `role` ON `role`.`id` = `event`.`role_id`
+               LEFT JOIN `schedule` ON `schedule`.`id` = `event`.`schedule_id`
                WHERE `user`.`id` = (SELECT `id` FROM `user` WHERE `name` = %%s)
                    AND `event`.`start` > UNIX_TIMESTAMP()''' % all_columns
 
