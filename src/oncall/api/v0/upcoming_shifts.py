@@ -57,6 +57,8 @@ def on_get(req, resp, user_name):
                JOIN `user` ON `user`.`id` = `event`.`user_id`
                JOIN `team` ON `team`.`id` = `event`.`team_id`
                JOIN `role` ON `role`.`id` = `event`.`role_id`
+               JOIN `schedule` ON `schedule`.`id` = `event`.`schedule_id`
+               JOIN `roster` ON `roster`.`id` = `schedule`.`roster_id`
                WHERE `user`.`id` = (SELECT `id` FROM `user` WHERE `name` = %%s)
                    AND `event`.`start` > UNIX_TIMESTAMP()''' % all_columns
 

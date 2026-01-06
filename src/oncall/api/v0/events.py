@@ -21,6 +21,7 @@ columns = {
     'end': '`event`.`end` as `end`',
     'role': '`role`.`name` as `role`',
     'role_display_name': '`role`.`display_name` as `role_display_name`',
+    'roster': '`roster`.`name` as `roster`',
     'team': '`team`.`name` as `team`',
     'user': '`user`.`name` as `user`',
     'full_name': '`user`.`full_name` as `full_name`',
@@ -177,7 +178,9 @@ def on_get(req, resp):
     query = '''SELECT %s FROM `event`
                JOIN `user` ON `user`.`id` = `event`.`user_id`
                JOIN `team` ON `team`.`id` = `event`.`team_id`
-               JOIN `role` ON `role`.`id` = `event`.`role_id`''' % cols
+               JOIN `role` ON `role`.`id` = `event`.`role_id`
+               JOIN `schedule` ON `schedule`.`id` = `event`.`schedule_id`
+               JOIN `roster` ON `roster`.`id` = `schedule`.`roster_id`''' % cols
 
     where_params = []
     where_vals = []

@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta
 from pytz import timezone, utc
-from oncall.utils import gen_link_id, create_notification
+from oncall.utils import gen_link_id, create_notification, read_config
 from ..constants import EVENT_CREATED
 from falcon import HTTPBadRequest
 from ujson import dumps as json_dumps
 import time
+import sys
 import logging
 import operator
 
@@ -396,6 +397,7 @@ class Scheduler(object):
         return json_dumps(data)
 
     def populate(self, schedule, start_time, dbinfo, table_name='event'):
+        config = read_config(sys.argv[1])
         connection, cursor = dbinfo
         start_dt = datetime.fromtimestamp(start_time, utc)
         start_epoch = self.epoch_from_datetime(start_dt)
@@ -412,7 +414,7 @@ class Scheduler(object):
         if start_dt > handoff:
             start_epoch += timedelta(weeks=period)
             handoff += timedelta(weeks=period)
-        if handoff < datetime.now(utc):
+        if handoff < datetime.now(utc) and config.get('allow_past_events', False) is not True:
             cursor.execute("DROP TEMPORARY TABLE IF EXISTS `temp_event`")
             connection.commit()
             raise HTTPBadRequest(

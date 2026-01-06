@@ -215,6 +215,12 @@
   border-color: #B2B0FA;
 }
 
+.inc-calendar .inc-event[data-type="tertiary"] {
+  background: #FAF0FA;
+  color: #47254E;
+  border-color: #D7B2D9;
+}
+
 .inc-calendar .inc-event[data-type="shadow"] {
   background: #E1E9EE;
   color: #283E4A;
@@ -250,6 +256,13 @@
 .inc-calendar .inc-event[data-type="manager"][data-highlighted="true"] {
   background: #0091CA;
   border-color: #006097;
+  color: rgba(255,255,255,.9);
+}
+
+.inc-calendar .inc-event[data-type="tertiary"][data-force-highlighted="true"],
+.inc-calendar .inc-event[data-type="tertiary"][data-highlighted="true"] {
+  background:rgb(219, 134, 219);
+  border-color:rgb(160, 79, 165);
   color: rgba(255,255,255,.9);
 }
 

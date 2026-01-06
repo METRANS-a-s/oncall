@@ -147,11 +147,14 @@ def on_get(req, resp, team):
                `user`.`name` AS `user`,
                `team`.`name` AS `team`,
                `role`.`name` AS `role`,
-               `role`.`display_name` AS `role_display_name`
+               `role`.`display_name` AS `role_display_name`,
+               `roster`.`name` AS `roster`
         FROM `event`
         JOIN `user` ON `event`.`user_id` = `user`.`id`
         JOIN `team` ON `event`.`team_id` = `team`.`id`
         JOIN `role` ON `role`.`id` = `event`.`role_id`
+        JOIN `schedule` ON `schedule`.`id` = `event`.`schedule_id`
+        JOIN `roster` ON `roster`.`id` = `schedule`.`roster_id`
         WHERE UNIX_TIMESTAMP() BETWEEN `event`.`start` AND `event`.`end`
         AND `user`.`id` IN %s''' % (allowed_users,)
     current_query = current_query.replace('{', '(').replace('}', ')')
@@ -178,6 +181,7 @@ def on_get(req, resp, team):
     next_query = '''
         SELECT `role`.`name` AS `role`,
                `role`.`display_name` AS `role_display_name`,
+               `roster`.`name` AS `roster`,
                `user`.`full_name` AS `full_name`,
                `event`.`start`,
                `event`.`end`,
@@ -189,6 +193,8 @@ def on_get(req, resp, team):
         FROM `event`
         JOIN `role` ON `event`.`role_id` = `role`.`id`
         JOIN `user` ON `event`.`user_id` = `user`.`id`
+        JOIN `schedule` ON `schedule`.`id` = `event`.`schedule_id`
+        JOIN `roster` ON `roster`.`id` = `schedule`.`roster_id`
 
         JOIN (SELECT `event`.`role_id`, `event`.`team_id`, MIN(`event`.`start` - UNIX_TIMESTAMP()) AS dist
               FROM `event` JOIN `team` ON `team`.`id` = `event`.`team_id`

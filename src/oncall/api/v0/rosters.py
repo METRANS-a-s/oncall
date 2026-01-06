@@ -48,7 +48,7 @@ def get_roster_by_team_id(cursor, team_id, user=None, params=None):
 
     user_id = -1
 
-    if cursor.rowcount >= 1:
+    if cursor.rowcount > 0:
         user_id = cursor.fetchone()['id']
     
     # get users for each roster
@@ -110,6 +110,7 @@ def get_roster_by_team_id(cursor, team_id, user=None, params=None):
                             LIMIT 1
                         )
                     )
+                    LIMIT 1
                 ) IS NOT NULL
             )
         )'''

@@ -1442,6 +1442,11 @@
           .append('<span class="data-col">' + evt.origEndDateObj.format('M/D/YYYY HH:mm') + '</span> <label class="small"> TZ: ' + (self.options.timezone ? self.options.timezone : 'System time') + '</label>')
         )
         .append(
+            $('<li />')
+            .append('<label class="label-col">Roster: </label>')
+            .append('<span class="data-col">' + evt.roster + '</span>')
+          )
+        .append(
           $('<li />')
           .append('<label class="label-col">Role: </label>')
           .append('<span class="data-col">' + evt.role_display_name + '</span>')
