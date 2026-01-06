@@ -888,7 +888,7 @@
         var startPos = calView === 'month' ? 0 : weekTitleCol;
 
         function createEventElement (left, top, width) {
-          var evtHtmlString = evt.displayString || '<span class="inc-event-name">' + ( evt.full_name || evt.user ) + '</span> <span class="inc-event-date"> ' + evt.origStartDateObj.format('M/D/YYYY HH:mm') + ' to ' + evt.origEndDateObj.format('M/D/YYYY HH:mm') + '</span>',
+          var evtHtmlString = evt.displayString || '<span class="inc-event-name">' + ( evt.full_name || evt.roster ) + '</span> <span class="inc-event-date"> ' + evt.origStartDateObj.format('M/D/YYYY HH:mm') + ' to ' + evt.origEndDateObj.format('M/D/YYYY HH:mm') + '</span>',
               evtDisplayString = evt.displayString || ( evt.full_name || evt.user ) + ' ' + evt.origStartDateObj.format('M/D/YYYY HH:mm') + ' to ' + evt.origEndDateObj.format('M/D/YYYY HH:mm');
 
           return $('<div class="inc-event" />')

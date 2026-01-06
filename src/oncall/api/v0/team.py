@@ -31,6 +31,10 @@ def populate_team_users(cursor, team_dict, user=None):
 
 
 def populate_team_admins(cursor, team_dict, user=None):
+    if user is None:
+        team_dict['admins'] = []
+        return
+    
     cursor.execute('''SELECT `user`.`name` FROM `team_admin`
                       JOIN `user` ON `team_admin`.`user_id`=`user`.`id`
                       WHERE `team_id`=%s''',

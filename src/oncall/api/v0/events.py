@@ -240,7 +240,7 @@ def on_get(req, resp):
         if row['user'] in users:
             continue
         data[i]['user'] = row['role_display_name']
-        data[i]['full_name'] = row['role_display_name']
+        data[i]['full_name'] = None
 
     resp.text = json_dumps(data)
 
