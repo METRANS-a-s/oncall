@@ -224,18 +224,22 @@ var oncall = {
   defineRoutes: function(){
     var self = this;
     router.on({
-      '/': function(){
-        oncall.callbacks.onLogin = $.noop;
-        oncall.callbacks.onLogout = $.noop;
+    //   '/': function(){
+    //     oncall.callbacks.onLogin = $.noop;
+    //     oncall.callbacks.onLogout = $.noop;
 
-        const user = self.data.user;
+    //     console.log('halo???')
 
-        if (user) {
-            router.navigate('/dashboard/' + user);
-        } else {
-            router.navigate('/teams/all');
-        }
-      },
+    //     const user = self.data.user;
+
+    //     setTimeout(() => {
+    //         if (user) {
+    //             router.navigate('/dashboard/' + user);
+    //         } else {
+    //             router.navigate('/teams/all');
+    //         }
+    //     }, 200)
+    //   },
       '/teams/all': function(){
         oncall.callbacks.onLogin = $.noop;
         oncall.callbacks.onLogout = $.noop;
