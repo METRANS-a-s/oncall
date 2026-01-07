@@ -224,22 +224,6 @@ var oncall = {
   defineRoutes: function(){
     var self = this;
     router.on({
-    //   '/': function(){
-    //     oncall.callbacks.onLogin = $.noop;
-    //     oncall.callbacks.onLogout = $.noop;
-
-    //     console.log('halo???')
-
-    //     const user = self.data.user;
-
-    //     setTimeout(() => {
-    //         if (user) {
-    //             router.navigate('/dashboard/' + user);
-    //         } else {
-    //             router.navigate('/teams/all');
-    //         }
-    //     }, 200)
-    //   },
       '/teams/all': function(){
         oncall.callbacks.onLogin = $.noop;
         oncall.callbacks.onLogout = $.noop;
@@ -329,13 +313,22 @@ var oncall = {
         self.search.init(params);
         self.updateTitleTag("");
       },
+      '/': function(){
+        if (window.location.pathname === '/') {
+            oncall.callbacks.onLogin = $.noop;
+            oncall.callbacks.onLogout = $.noop;
+            self.browse.init();
+            self.updateTitleTag("All teams");
+        }
+      },
       '*': function(){
         oncall.callbacks.onLogin = $.noop;
         oncall.callbacks.onLogout = $.noop;
         window.history.replaceState({},'home', '/');
         self.search.init();
         self.updateTitleTag("");
-      }
+      },
+      
     }).notFound(function(){
       router.navigate('/');
       self.updateTitleTag("");
