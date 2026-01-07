@@ -220,11 +220,22 @@ var oncall = {
     else{
       document.title = unescape(newTitle) + " - Oncall";
     }
-
   },
   defineRoutes: function(){
     var self = this;
     router.on({
+      '/': function(){
+        oncall.callbacks.onLogin = $.noop;
+        oncall.callbacks.onLogout = $.noop;
+
+        const user = self.data.user;
+
+        if (user) {
+            router.navigate('/dashboard/' + user);
+        } else {
+            router.navigate('/teams/all');
+        }
+      },
       '/teams/all': function(){
         oncall.callbacks.onLogin = $.noop;
         oncall.callbacks.onLogout = $.noop;
@@ -275,8 +286,13 @@ var oncall = {
       '/dashboard/:name': function(params){
         oncall.callbacks.onLogin = $.noop;
         oncall.callbacks.onLogout = $.noop;
-        self.dashboard.init(params.name);
-        self.updateTitleTag(params.name + " dashboard");
+
+        if (self.data.user !== params.name) {
+            router.navigate('/teams/all');
+        } else {
+            self.dashboard.init(params.name);
+            self.updateTitleTag(params.name + " dashboard");
+        }
       },
       '/user/:user/': function(){
         oncall.callbacks.onLogin = $.noop;
@@ -1043,7 +1059,7 @@ var oncall = {
                   // #TODO: Fix after full name from API is sorted out. in the
                   // mean time, replaces the full name of the event with full
                   // name from teamData for display.
-                  if (!evt.full_name && userData.full_name) {
+                  if (!evt.full_name && userData && userData.full_name) {
                     evt.full_name = userData.full_name;
                   }
                   if (evt.full_name) {

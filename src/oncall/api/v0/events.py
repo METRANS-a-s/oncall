@@ -235,14 +235,18 @@ def on_get(req, resp):
     users = {user['name'] for roster in roster.values() for user in roster['users']}
     now = int(time.time())
 
+    filtered_data = []
+
     for i in range(len(data)):
         row = data[i]
         if row['user'] in users:
+            filtered_data.append(data[i])
             continue
+        
         data[i]['user'] = row['role_display_name']
         data[i]['full_name'] = None
 
-    resp.text = json_dumps(data)
+    resp.text = json_dumps(filtered_data)
 
 
 @login_required
