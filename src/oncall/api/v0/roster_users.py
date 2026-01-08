@@ -4,12 +4,15 @@
 from urllib.parse import unquote
 from falcon import HTTPError, HTTP_201, HTTPBadRequest, HTTPNotFound
 from ujson import dumps as json_dumps
+import logging
 
 from ...auth import login_required, check_team_auth
 from .users import get_user_data
 from ... import db
 from ...utils import load_json_body, subscribe_notifications, create_audit
 from ...constants import ROSTER_USER_ADDED
+
+logger = logging.getLogger('oncall.api.v0.roster_users')
 
 
 def on_get(req, resp, team, roster):
@@ -160,7 +163,9 @@ def on_post(req, resp, team, roster):
         create_audit({'roster': roster, 'user': user_name, 'request_body': data}, team,
                      ROSTER_USER_ADDED, req, cursor)
         connection.commit()
-    except db.IntegrityError:
+    except db.IntegrityError as err:
+        logger.error('Failed to add user to roaster: %s', repr(err))
+
         raise HTTPError(
             '422 Unprocessable Entity',
             title='IntegrityError',
