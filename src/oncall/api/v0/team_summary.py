@@ -133,11 +133,14 @@ def on_get(req, resp, team):
     roster = get_roster_by_team_id(cursor, team_id, user)
     allowed_users = {user['name'] for roster in roster.values() for user in roster['users']}
 
-    query = 'SELECT id FROM `user` WHERE `name` IN %s' % (allowed_users,)
-    query = query.replace('{', '(').replace('}', ')')
+    if len(allowed_users) > 0:
+        query = 'SELECT id FROM `user` WHERE `name` IN %s' % (tuple(allowed_users),)
+        logger.info('Allowed users query: %s', query)
 
-    cursor.execute(query)
-    allowed_users = {row['id'] for row in cursor}
+        cursor.execute(query)
+        allowed_users = {row['id'] for row in cursor}
+    else:
+        allowed_users = set()
 
     current_query = '''
         SELECT `user`.`full_name` AS `full_name`,
@@ -155,8 +158,11 @@ def on_get(req, resp, team):
         JOIN `role` ON `role`.`id` = `event`.`role_id`
         JOIN `schedule` ON `schedule`.`id` = `event`.`schedule_id`
         JOIN `roster` ON `roster`.`id` = `schedule`.`roster_id`
-        WHERE UNIX_TIMESTAMP() BETWEEN `event`.`start` AND `event`.`end`
-        AND `user`.`id` IN %s''' % (allowed_users,)
+        WHERE UNIX_TIMESTAMP() BETWEEN `event`.`start` AND `event`.`end`'''
+    
+    if len(allowed_users) > 0:
+        current_query += ' AND `user`.`id` IN %s' % (tuple(allowed_users),)
+
     current_query = current_query.replace('{', '(').replace('}', ')')
     team_where = '`team`.`id` = %s'
     cursor.execute('''SELECT `subscription_id`, `role_id` FROM `team_subscription`
