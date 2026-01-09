@@ -135,54 +135,52 @@ def on_get(req, resp, team):
 
     if len(allowed_users) > 0:
         query = 'SELECT id FROM `user` WHERE `name` IN %s' % (tuple(allowed_users),)
-        logger.info('Allowed users query: %s', query)
-
         cursor.execute(query)
         allowed_users = {row['id'] for row in cursor}
     else:
         allowed_users = set()
 
-    current_query = '''
-        SELECT `user`.`full_name` AS `full_name`,
-               `user`.`photo_url`,
-               `event`.`start`, `event`.`end`,
-               `event`.`user_id`,
-               `user`.`name` AS `user`,
-               `team`.`name` AS `team`,
-               `role`.`name` AS `role`,
-               `role`.`display_name` AS `role_display_name`,
-               `roster`.`name` AS `roster`
-        FROM `event`
-        JOIN `user` ON `event`.`user_id` = `user`.`id`
-        JOIN `team` ON `event`.`team_id` = `team`.`id`
-        JOIN `role` ON `role`.`id` = `event`.`role_id`
-        JOIN `schedule` ON `schedule`.`id` = `event`.`schedule_id`
-        JOIN `roster` ON `roster`.`id` = `schedule`.`roster_id`
-        WHERE UNIX_TIMESTAMP() BETWEEN `event`.`start` AND `event`.`end`'''
-    
-    if len(allowed_users) > 0:
-        current_query += ' AND `user`.`id` IN %s' % (tuple(allowed_users),)
-
-    current_query = current_query.replace('{', '(').replace('}', ')')
-    team_where = '`team`.`id` = %s'
-    cursor.execute('''SELECT `subscription_id`, `role_id` FROM `team_subscription`
-                      JOIN `team` ON `team_id` = `team`.`id`
-                      WHERE %s''' % team_where,
-                   team_id)
-
-    if cursor.rowcount != 0:
-        # Check conditions are true for either team OR subscriber
-        team_where = '(%s OR (%s))' % (team_where, ' OR '.join(
-            ['`event`.`team_id` = %s AND `event`.`role_id` = %s' %
-             (row['subscription_id'], row['role_id']) for row in cursor]))
-
-    cursor.execute(' AND '.join((current_query, team_where)), team_id)
-    payload = {}
     users = set([])
-    payload['current'] = defaultdict(list)
-    for event in cursor:
-        payload['current'][event['role']].append(event)
-        users.add(event['user_id'])
+    payload = {}
+
+    if len(allowed_users) > 0:
+        current_query = '''
+            SELECT `user`.`full_name` AS `full_name`,
+                `user`.`photo_url`,
+                `event`.`start`, `event`.`end`,
+                `event`.`user_id`,
+                `user`.`name` AS `user`,
+                `team`.`name` AS `team`,
+                `role`.`name` AS `role`,
+                `role`.`display_name` AS `role_display_name`,
+                `roster`.`name` AS `roster`
+            FROM `event`
+            JOIN `user` ON `event`.`user_id` = `user`.`id`
+            JOIN `team` ON `event`.`team_id` = `team`.`id`
+            JOIN `role` ON `role`.`id` = `event`.`role_id`
+            JOIN `schedule` ON `schedule`.`id` = `event`.`schedule_id`
+            JOIN `roster` ON `roster`.`id` = `schedule`.`roster_id`
+            WHERE UNIX_TIMESTAMP() BETWEEN `event`.`start` AND `event`.`end`'''
+        current_query += ' AND `user`.`id` IN %s' % (tuple(allowed_users),)
+        team_where = '`team`.`id` = %s'
+        cursor.execute('''SELECT `subscription_id`, `role_id` FROM `team_subscription`
+                        JOIN `team` ON `team_id` = `team`.`id`
+                        WHERE %s''' % team_where,
+                    team_id)
+
+        if cursor.rowcount != 0:
+            # Check conditions are true for either team OR subscriber
+            team_where = '(%s OR (%s))' % (team_where, ' OR '.join(
+                ['`event`.`team_id` = %s AND `event`.`role_id` = %s' %
+                (row['subscription_id'], row['role_id']) for row in cursor]))
+
+        cursor.execute(' AND '.join((current_query, team_where)), team_id)
+        payload['current'] = defaultdict(list)
+        for event in cursor:
+            payload['current'][event['role']].append(event)
+            users.add(event['user_id'])
+    else:
+        payload['current'] = {}
 
     next_query = '''
         SELECT `role`.`name` AS `role`,
