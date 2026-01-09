@@ -84,6 +84,15 @@ nav.navbar {
   border-radius: 2px;
 }
 
+.navbar .navbar-select {
+  background-color: #fff;
+  color: #333;
+  padding: 0 10px;
+  height: 32px;
+  border: none;
+  border-radius: 2px;
+}
+
 body[data-authenticated="false"] #create-btn {
   display: none;
 }

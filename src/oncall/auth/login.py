@@ -22,8 +22,9 @@ def on_post(req, resp):
             title='Invalid login attempt',
             description='Missing user/password'
         )
+    ldap_domain = login_info.get('domain')
 
-    if not auth_manager.authenticate(user, password):
+    if not auth_manager.authenticate(user, password, ldap_domain):
         raise HTTPUnauthorized(
             title='Authentication failure',
             description='bad login credentials',

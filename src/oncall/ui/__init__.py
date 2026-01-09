@@ -7,8 +7,11 @@
 
 import logging
 import re
+import oncall.utils
+import sys
 from ..constants import SUPPORTED_TIMEZONES
 from .. import auth
+from .. import db
 from os import path, environ
 from falcon import HTTPNotFound
 from datetime import date
@@ -86,6 +89,26 @@ def index(req, resp):
         resp.content_type = 'text/html'
         resp.text = jinja2_env.get_template('loginsplash.html').render()
     else:
+        config = oncall.utils.read_config(sys.argv[1])
+        # Get ldap domains for login
+        ldap_domains = []
+        
+        # if 'auth' in config and 'module' in config['auth'] and config['auth']['module'] == 'oncall.auth.modules.ldap_import':
+        if True:
+            try:
+                connection = db.connect()
+                cursor = connection.cursor(db.DictCursor)
+
+                query = 'SELECT `name`, `display_name` FROM `ldap_domain` WHERE `active` = 1'
+
+                cursor.execute(query)
+                ldap_domains = cursor.fetchall()
+            except Exception as err:
+                logger.error('Failed to fetch ldap domains for login %s', str(err))
+            finally:
+                cursor.close()
+                connection.close()
+
         resp.content_type = 'text/html'
         resp.text = jinja2_env.get_template('index.html').render(
             user=user,
@@ -99,7 +122,8 @@ def index(req, resp):
             public_calendar_additional_message=PUBLIC_CALENDAR_ADDITIONAL_MESSAGE,
             footer=INDEX_CONTENT_SETTING['footer'],
             timezones=SUPPORTED_TIMEZONES,
-            team_managed_message=TEAM_MANAGED_MESSAGE
+            team_managed_message=TEAM_MANAGED_MESSAGE,
+            ldap_domains=ldap_domains
         )
 
 

@@ -6,5 +6,5 @@ class Authenticator(object):
     def __init__(self, config):
         pass
 
-    def authenticate(self, username, password):
+    def authenticate(self, username, password, ldap_domain=None):
         return True

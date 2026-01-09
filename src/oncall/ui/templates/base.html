@@ -42,6 +42,13 @@
                 <form action="" method="POST" id="navbar-form">
                   <input name="username" class="navbar-input" type="text" placeholder="Username">
                   <input  name="password" class="navbar-input" type="password" placeholder="Password">
+                  {% if ldap_domains %}
+                  <select name="domain" class="navbar-select">
+                    {% for domain in ldap_domains %}
+                      <option value="{{domain.name}}">{{domain.display_name}}</option>
+                    {% endfor %}
+                  </select>
+                  {% endif %}
                   <button id="login-btn" class="btn btn-white" type="submit">Sign in</button>
                 </form>
                 <div class="dropdown-toggle user-info" data-toggle="dropdown">

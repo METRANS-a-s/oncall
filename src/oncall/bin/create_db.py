@@ -8,7 +8,6 @@ import sys
 import re
 import oncall.utils
 
-
 def main():
     if len(sys.argv) <= 2:
         sys.exit("USAGE: %s CONFIG_FILE SQL_FILE" % sys.argv[0])

@@ -31,7 +31,7 @@ class Authenticator:
 
         self.user_suffix = config.get('ldap_user_suffix')
 
-    def ldap_auth(self, username, password):
+    def ldap_auth(self, username, password, ldap_domain=None):
         if self.cert_path:
             ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, self.cert_path)
 
@@ -61,5 +61,5 @@ class Authenticator:
             return None
         return True
 
-    def debug_auth(self, username, password):
+    def debug_auth(self, username, password, ldap_domain=None):
         return True
