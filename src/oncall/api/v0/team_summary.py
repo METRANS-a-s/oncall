@@ -142,6 +142,7 @@ def on_get(req, resp, team):
 
     users = set([])
     payload = {}
+    team_where = None
 
     if len(allowed_users) > 0:
         current_query = '''
@@ -182,69 +183,73 @@ def on_get(req, resp, team):
     else:
         payload['current'] = {}
 
-    next_query = '''
-        SELECT `role`.`name` AS `role`,
-               `role`.`display_name` AS `role_display_name`,
-               `roster`.`name` AS `roster`,
-               `user`.`full_name` AS `full_name`,
-               `event`.`start`,
-               `event`.`end`,
-               `user`.`photo_url`,
-               `user`.`name` AS `user`,
-               `event`.`user_id`,
-               `event`.`role_id`,
-               `event`.`team_id`
-        FROM `event`
-        JOIN `role` ON `event`.`role_id` = `role`.`id`
-        JOIN `user` ON `event`.`user_id` = `user`.`id`
-        JOIN `schedule` ON `schedule`.`id` = `event`.`schedule_id`
-        JOIN `roster` ON `roster`.`id` = `schedule`.`roster_id`
+    if team_where is None:
+        payload['next'] = {}
+    else:
+        next_query = '''
+            SELECT `role`.`name` AS `role`,
+                `role`.`display_name` AS `role_display_name`,
+                `roster`.`name` AS `roster`,
+                `user`.`full_name` AS `full_name`,
+                `event`.`start`,
+                `event`.`end`,
+                `user`.`photo_url`,
+                `user`.`name` AS `user`,
+                `event`.`user_id`,
+                `event`.`role_id`,
+                `event`.`team_id`
+            FROM `event`
+            JOIN `role` ON `event`.`role_id` = `role`.`id`
+            JOIN `user` ON `event`.`user_id` = `user`.`id`
+            JOIN `schedule` ON `schedule`.`id` = `event`.`schedule_id`
+            JOIN `roster` ON `roster`.`id` = `schedule`.`roster_id`
 
-        JOIN (SELECT `event`.`role_id`, `event`.`team_id`, MIN(`event`.`start` - UNIX_TIMESTAMP()) AS dist
-              FROM `event` JOIN `team` ON `team`.`id` = `event`.`team_id`
-              WHERE `start` > UNIX_TIMESTAMP() AND %s
-              GROUP BY `event`.`role_id`, `event`.`team_id`) AS t1
-            ON `event`.`role_id` = `t1`.`role_id`
-                AND `event`.`start` - UNIX_TIMESTAMP() = `t1`.dist
-                AND `event`.`team_id` = `t1`.`team_id`''' % team_where
-    cursor.execute(next_query, team_id)
-    payload['next'] = defaultdict(list)
-    for event in cursor:
-        payload['next'][event['role']].append(event)
-        users.add(event['user_id'])
+            JOIN (SELECT `event`.`role_id`, `event`.`team_id`, MIN(`event`.`start` - UNIX_TIMESTAMP()) AS dist
+                FROM `event` JOIN `team` ON `team`.`id` = `event`.`team_id`
+                WHERE `start` > UNIX_TIMESTAMP() AND %s
+                GROUP BY `event`.`role_id`, `event`.`team_id`) AS t1
+                ON `event`.`role_id` = `t1`.`role_id`
+                    AND `event`.`start` - UNIX_TIMESTAMP() = `t1`.dist
+                    AND `event`.`team_id` = `t1`.`team_id`''' % team_where
+        cursor.execute(next_query, team_id)
+        payload['next'] = defaultdict(list)
+        for event in cursor:
+            payload['next'][event['role']].append(event)
+            users.add(event['user_id'])
 
-    users = allowed_users & users
+        users = allowed_users & users
 
-    if users:
-        # TODO: write a test for empty users
-        contacts_query = '''
-            SELECT `contact_mode`.`name` AS `mode`,
-                   `user_contact`.`destination`,
-                   `user_contact`.`user_id`
-            FROM `user`
-                JOIN `user_contact` ON `user`.`id` = `user_contact`.`user_id`
-                JOIN `contact_mode` ON `contact_mode`.`id` = `user_contact`.`mode_id`
-            WHERE `user`.`id` IN %s'''
+        if users:
+            # TODO: write a test for empty users
+            contacts_query = '''
+                SELECT `contact_mode`.`name` AS `mode`,
+                    `user_contact`.`destination`,
+                    `user_contact`.`user_id`
+                FROM `user`
+                    JOIN `user_contact` ON `user`.`id` = `user_contact`.`user_id`
+                    JOIN `contact_mode` ON `contact_mode`.`id` = `user_contact`.`mode_id`
+                WHERE `user`.`id` IN %s'''
 
-        cursor.execute(contacts_query, (users,))
-        contacts = cursor.fetchall()
+            cursor.execute(contacts_query, (users,))
+            contacts = cursor.fetchall()
 
-        for part in payload.values():
-            for event_list in part.values():
-                for event in event_list:
-                    event['user_contacts'] = dict((c['mode'], c['destination'])
-                                                  for c in contacts
-                                                  if c['user_id'] == event['user_id'])
+            for part in payload.values():
+                for event_list in part.values():
+                    for event in event_list:
+                        event['user_contacts'] = dict((c['mode'], c['destination'])
+                                                    for c in contacts
+                                                    if c['user_id'] == event['user_id'])
+
+        if override_num:
+            try:
+                for event in payload['current']['primary']:
+                    event['user_contacts']['call'] = override_num
+                    event['user_contacts']['sms'] = override_num
+            except KeyError:
+                # No current primary events exist, do nothing
+                pass
 
     cursor.close()
     connection.close()
-    if override_num:
-        try:
-            for event in payload['current']['primary']:
-                event['user_contacts']['call'] = override_num
-                event['user_contacts']['sms'] = override_num
-        except KeyError:
-            # No current primary events exist, do nothing
-            pass
 
     resp.text = dumps(payload)
