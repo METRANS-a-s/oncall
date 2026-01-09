@@ -3,6 +3,8 @@
 import logging
 import uuid
 import time
+import sys
+import oncall.utils
 from urllib.parse import unquote
 from falcon import HTTPNotFound, HTTPBadRequest, HTTPError
 from ujson import dumps as json_dumps
@@ -32,6 +34,37 @@ def populate_team_users(cursor, team_dict, user=None):
 
 def populate_team_admins(cursor, team_dict, user=None):
     if user is None:
+        team_dict['admins'] = []
+        return
+
+    config = oncall.utils.read_config(sys.argv[1])
+    minimum_display_order_to_see_admins = config.get('minimum_display_order_to_see_admins', 2)
+
+    cursor.execute('''SELECT `user`.`id`
+                      FROM `user`
+                      LEFT JOIN `roster_user` ON `roster_user`.`user_id` = `user`.`id`
+                      LEFT JOIN `schedule` ON `schedule`.`roster_id` = `roster_user`.`roster_id`
+                      LEFT JOIN `role` ON `role`.`id` = `schedule`.`role_id`
+                      LEFT JOIN `team_admin` ON `team_admin`.user_id = `user`.`id`
+                      WHERE `user`.`name` = %s
+                      AND (
+                          # god
+                          (`user`.`god` = 1)	
+                          OR
+                          # display_order
+                          (
+                              `role`.`display_order` >= %s
+                              AND
+                              `schedule`.`team_id` = %s    
+                          )
+                          OR
+                          # admin
+                          (`team_admin`.`team_id` = %s)
+                      )
+                      GROUP BY `user`.`name`''',
+                      (user, minimum_display_order_to_see_admins, team_dict['id'], team_dict['id']))
+
+    if not cursor.fetchone():
         team_dict['admins'] = []
         return
     
