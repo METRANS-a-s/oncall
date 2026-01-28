@@ -64,29 +64,32 @@ class Authenticator:
 
         ldap_config = self.get_ldap_config(config, ldap_domain)
 
-        if ldap_config.cert_path:
-            ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, ldap_config.cert_path)
+        logger.info(ldap_config)
 
-        connection = ldap.initialize(ldap_config.ldap_url)
+        if ldap_config['cert_path'] is not None and ldap_config['cert_path'] != '':
+            logger.info("Setting LDAP TLS CA Cert File to %s", ldap_config['cert_path'])
+            ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, ldap_config['cert_path'])
+
+        connection = ldap.initialize(ldap_config['ldap_url'])
         connection.set_option(ldap.OPT_REFERRALS, 0)
-        attrs = ['dn'] + list(ldap_config.attrs.values())
+        attrs = ['dn'] + list(ldap_config['attrs'].values())
         ldap_contacts = {}
 
         if not password:
             return False
 
-        auth_user = username + ldap_config.user_suffix
+        auth_user = username + ldap_config['user_suffix']
         try:
-            if ldap_config.bind_user:
+            if ldap_config['bind_user']:
                 # use search filter to find DN of username
-                connection.simple_bind_s(ldap_config.bind_user, ldap_config.bind_password)
-                sfilter = ldap_config.search_filter % username
-                result = connection.search_s(ldap_config.base_dn, ldap.SCOPE_SUBTREE, sfilter, attrs)
+                connection.simple_bind_s(ldap_config['bind_user'], ldap_config['bind_password'])
+                sfilter = ldap_config['search_filter'] % username
+                result = connection.search_s(ldap_config['base_dn'], ldap.SCOPE_SUBTREE, sfilter, attrs)
                 if len(result) < 1:
                     return False
                 auth_user = result[0][0]
                 ldap_attrs = result[0][1]
-                for key, val in ldap_config.attrs.items():
+                for key, val in ldap_config['attrs'].items():
                     if ldap_attrs.get(val):
                         if type(ldap_attrs.get(val)) == list:
                             ldap_contacts[key] = ldap_attrs.get(val)[0]
@@ -103,7 +106,7 @@ class Authenticator:
             logger.warn("%s", err)
             return None
 
-        if ldap_config.import_user:
+        if ldap_config['import_user']:
             connection = db.connect()
             cursor = connection.cursor(db.DictCursor)
             if user_exists(username, cursor):
