@@ -64,8 +64,6 @@ class Authenticator:
 
         ldap_config = self.get_ldap_config(config, ldap_domain)
 
-        logger.info(ldap_config)
-
         if ldap_config['cert_path'] is not None and ldap_config['cert_path'] != '':
             logger.info("Setting LDAP TLS CA Cert File to %s", ldap_config['cert_path'])
             ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, ldap_config['cert_path'])
