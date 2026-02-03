@@ -240,7 +240,11 @@ def on_get(req, resp):
     for i in range(len(data)):
         row = data[i]
         if row['user'] in users:
-            filtered_data.append(data[i])
+            if user is not None:
+                filtered_data.append(data[i])
+            else:
+                if row['end'] >= now and row['start'] <= now:
+                    filtered_data.append(data[i])
             continue
         
         data[i]['user'] = row['role_display_name']

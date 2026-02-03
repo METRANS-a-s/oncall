@@ -1256,7 +1256,8 @@
 
                 for (var i = 0; i < self.options.roles.length; i++) {
                   var roleName = self.options.roles[i].name;
-                  options += '<option value="' + roleName + '">' + roleName + '</option>';
+                  var roleDisplayName = self.options.roles[i].display_name;
+                  options += '<option value="' + roleName + '">' + roleDisplayName + '</option>';
                 }
 
                 return options;
