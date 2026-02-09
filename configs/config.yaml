@@ -68,6 +68,43 @@ auth:
 #     mobile: 'mobile'
 #     sms: 'phone'
 #     slack: 'uid'
+authh:
+  module: 'oncall.auth.modules.ldap_import' # for automatically import user at first connexion
+  ldap:
+    source_one:
+      ldap_url: 'ldaps://example.com'
+      ldap_user_suffix: '@example.biz'
+      ldap_cert_path: '/etc/ldap_cert.pem'
+      ldap_bind_user: 'cn=binduser,ou=services,dc=company,dc=org'
+      ldap_bind_password: 'abc123'
+      ldap_base_dn: 'ou=accounts,dc=company,dc=org'
+      ldap_search_filter: '(uid=%s)'
+      import_user: True
+      attrs:
+        username: 'uid'
+        full_name: 'displayName'
+        email: 'mail'
+        mobile: 'mobile'
+        sms: 'phone'
+        slack: 'uid'
+    source_two:
+      ldap_url: 'ldaps://example.com'
+      ldap_user_suffix: '@example.biz'
+      ldap_cert_path: '/etc/ldap_cert.pem'
+      ldap_bind_user: 'cn=binduser,ou=services,dc=company,dc=org'
+      ldap_bind_password: 'abc123'
+      ldap_base_dn: 'ou=accounts,dc=company,dc=org'
+      ldap_search_filter: '(uid=%s)'
+      import_user: True
+      attrs:
+        username: 'uid'
+        full_name: 'displayName'
+        email: 'mail'
+        mobile: 'mobile'
+        sms: 'phone'
+        slack: 'uid'
+
+
 
 ############################
 ### Oncall-notifier settings
